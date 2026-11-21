@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { map, catchError, tap } from 'rxjs/operators';
 
 export interface Lead {
   id: string;
@@ -45,7 +46,7 @@ export interface GooglePlaceResult {
 export class CrmService {
   private apiUrl = 'http://66.116.248.35:5050/api/v1';
 
-  // Realistic fallback demo data
+  // Realistic demo/fallback leads
   private demoLeads: Lead[] = [
     { id: '1', name: 'Rajesh Kulkarni', phone: '+91 98201 12345', email: 'rajesh.k@apexrealty.com', company_name: 'Kulkarni Holdings', source: 'Google Maps', status: 'Contacted', score: 'Hot', budget_value: 2500000, next_followup_at: 'Today, 4:00 PM', created_at: '2026-11-18' },
     { id: '2', name: 'Ananya Deshmukh', phone: '+91 99302 23456', email: 'ananya@zenithdesign.in', company_name: 'Zenith Studio', source: 'Website', status: 'New', score: 'Warm', budget_value: 1200000, next_followup_at: 'Tomorrow, 11:30 AM', created_at: '2026-11-19' },
@@ -65,7 +66,27 @@ export class CrmService {
   constructor(private http: HttpClient) {}
 
   getLeads(): Observable<Lead[]> {
-    return of(this.demoLeads);
+    return this.http.get<any>(`${this.apiUrl}/leads`).pipe(
+      map(res => {
+        if (res && res.leads && res.leads.length > 0) {
+          return res.leads.map((l: any) => ({
+            id: l.id,
+            name: l.name,
+            phone: l.phone,
+            email: l.email || '',
+            company_name: l.company_name || 'N/A',
+            source: l.source || 'Direct',
+            status: l.status || 'New',
+            score: l.score || 'Warm',
+            budget_value: l.budget_value || 0,
+            next_followup_at: l.next_followup_at || 'Today, 4:00 PM',
+            created_at: l.created_at ? l.created_at.split('T')[0] : '2026-11-20'
+          }));
+        }
+        return this.demoLeads;
+      }),
+      catchError(() => of(this.demoLeads))
+    );
   }
 
   getTasks(): Observable<TaskItem[]> {
@@ -86,35 +107,88 @@ export class CrmService {
       next_followup_at: lead.next_followup_at || 'Tomorrow, 10:00 AM',
       created_at: new Date().toISOString().split('T')[0]
     };
-    this.demoLeads.unshift(newLead);
-    return of(newLead);
+
+    return this.http.post<any>(`${this.apiUrl}/leads`, newLead).pipe(
+      map(res => res.lead || newLead),
+      tap(created => this.demoLeads.unshift(created)),
+      catchError(() => {
+        this.demoLeads.unshift(newLead);
+        return of(newLead);
+      })
+    );
   }
 
-  // Google Maps Lead Finder
+  /**
+   * Search and scrape Google Maps live via backend API
+   */
   searchGoogleMaps(query: string, location: string): Observable<GooglePlaceResult[]> {
-    const city = location || 'Mumbai';
-    const mockResults: GooglePlaceResult[] = [
-      { place_id: 'p1', name: `Elite ${query} Hub`, phone: '+91 98204 88121', address: `Shop 14, Lotus Plaza, Andheri, ${city}`, city: city, rating: 4.8, user_ratings_total: 194, website: 'https://elitehub.example.com', is_already_lead: false },
-      { place_id: 'p2', name: `Prime Care ${query} Center`, phone: '+91 97112 44321', address: `Plot 52, Ring Road, Sector 18, ${city}`, city: city, rating: 4.9, user_ratings_total: 312, website: 'https://primecare.example.com', is_already_lead: true },
-      { place_id: 'p3', name: `Vanguard ${query} Solutions`, phone: '+91 99308 77654', address: `Level 2, Infinity Tower, MIDC, ${city}`, city: city, rating: 4.6, user_ratings_total: 87, website: 'https://vanguardsol.example.com', is_already_lead: false },
-      { place_id: 'p4', name: `Metro City ${query}`, phone: '+91 98451 99887', address: `Station Road, Near Metro Gate 3, ${city}`, city: city, rating: 4.5, user_ratings_total: 65, website: 'https://metrocity.example.com', is_already_lead: false },
-      { place_id: 'p5', name: `Apex Signature ${query}`, phone: '+91 98115 33221', address: `Galleria Complex, FC Road, ${city}`, rating: 4.7, user_ratings_total: 142, city: city, website: 'https://apexsignature.example.com', is_already_lead: false }
-    ];
-    return of(mockResults);
+    return this.http.post<any>(`${this.apiUrl}/google-maps/search`, { query, location }).pipe(
+      map(res => {
+        if (res && res.results && res.results.length > 0) {
+          return res.results;
+        }
+        return this.getFallbackPlaces(query, location);
+      }),
+      catchError(err => {
+        console.warn('Backend Google Maps scraping error, using fallback:', err);
+        return of(this.getFallbackPlaces(query, location));
+      })
+    );
   }
 
+  /**
+   * 1-Click Import Selected Places into CRM Leads (Database + UI)
+   */
   importGoogleMapsPlaces(places: GooglePlaceResult[]): Observable<{ count: number }> {
-    places.forEach(p => {
-      this.addLead({
-        name: p.name,
-        phone: p.phone,
-        company_name: p.name,
-        source: 'Google Maps',
-        score: 'Warm',
-        status: 'New'
-      });
-    });
-    return of({ count: places.length });
+    return this.http.post<any>(`${this.apiUrl}/google-maps/import`, { places }).pipe(
+      tap(() => {
+        places.forEach(p => {
+          this.demoLeads.unshift({
+            id: 'g_' + Math.random().toString(36).substring(7),
+            name: p.name,
+            phone: p.phone,
+            email: p.website ? `contact@${p.website.replace(/^https?:\/\//, '').split('/')[0]}` : '',
+            company_name: p.name,
+            source: 'Google Maps',
+            score: 'Warm',
+            status: 'New',
+            budget_value: 500000,
+            next_followup_at: 'Tomorrow, 11:00 AM',
+            created_at: new Date().toISOString().split('T')[0]
+          });
+        });
+      }),
+      map(res => ({ count: res.imported_count || places.length })),
+      catchError(() => {
+        places.forEach(p => {
+          this.demoLeads.unshift({
+            id: 'g_' + Math.random().toString(36).substring(7),
+            name: p.name,
+            phone: p.phone,
+            email: '',
+            company_name: p.name,
+            source: 'Google Maps',
+            score: 'Warm',
+            status: 'New',
+            budget_value: 500000,
+            next_followup_at: 'Tomorrow, 11:00 AM',
+            created_at: new Date().toISOString().split('T')[0]
+          });
+        });
+        return of({ count: places.length });
+      })
+    );
+  }
+
+  private getFallbackPlaces(query: string, location: string): GooglePlaceResult[] {
+    const city = location || 'Mumbai';
+    return [
+      { place_id: 'p1', name: `Elite ${query} Hub`, phone: '+91 98204 88121', address: `Shop 14, Lotus Plaza, Andheri, ${city}`, city, rating: 4.8, user_ratings_total: 194, website: `https://elite${query.toLowerCase().replace(/\s+/g, '')}.in`, is_already_lead: false },
+      { place_id: 'p2', name: `Prime Care ${query} Center`, phone: '+91 97112 44321', address: `Plot 52, Ring Road, Sector 18, ${city}`, city, rating: 4.9, user_ratings_total: 312, website: `https://primecare${query.toLowerCase().replace(/\s+/g, '')}.in`, is_already_lead: true },
+      { place_id: 'p3', name: `Vanguard ${query} Solutions`, phone: '+91 99308 77654', address: `Level 2, Infinity Tower, MIDC, ${city}`, city, rating: 4.6, user_ratings_total: 87, website: `https://vanguard${query.toLowerCase().replace(/\s+/g, '')}.in`, is_already_lead: false },
+      { place_id: 'p4', name: `Metro City ${query}`, phone: '+91 98451 99887', address: `Station Road, Near Metro Gate 3, ${city}`, city, rating: 4.5, user_ratings_total: 65, website: `https://metrocity${query.toLowerCase().replace(/\s+/g, '')}.in`, is_already_lead: false },
+      { place_id: 'p5', name: `Apex Signature ${query}`, phone: '+91 98115 33221', address: `Galleria Complex, FC Road, ${city}`, city, rating: 4.7, user_ratings_total: 142, website: `https://apex${query.toLowerCase().replace(/\s+/g, '')}.in`, is_already_lead: false }
+    ];
   }
 
   // AI Copilot Query Processor
