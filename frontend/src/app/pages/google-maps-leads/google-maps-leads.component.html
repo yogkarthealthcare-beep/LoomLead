@@ -1,0 +1,159 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">
+        <i class="bi bi-geo-alt-fill text-danger me-2"></i> Google Maps & Trending B2B Lead Generator
+      </h3>
+      <p class="text-muted small mb-0">Discover verified business contacts, direct phone numbers, and addresses via Google Places API & Axios.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle p-2">
+        <i class="bi bi-lightning-charge-fill me-1"></i> Quota: 42 / 500 Extractions this month
+      </span>
+      <a routerLink="/leads" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-people me-1"></i> View All CRM Leads
+      </a>
+    </div>
+  </div>
+
+  <!-- Trending Keywords Chips -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="text-muted small fw-semibold text-uppercase me-2">
+          <i class="bi bi-fire text-danger"></i> Trending Niches:
+        </span>
+        <button 
+          *ngFor="let item of trendingKeywords" 
+          class="btn btn-sm btn-light border rounded-pill px-3 py-1"
+          [class.btn-primary]="searchQuery === item.label && selectedCity === item.city"
+          [class.text-white]="searchQuery === item.label && selectedCity === item.city"
+          (click)="applyTrending(item)">
+          {{ item.label }} in {{ item.city }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Filter Form -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label small fw-semibold text-muted">Business Niche / Commercial Keyword</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control" [(ngModel)]="searchQuery" placeholder="e.g. Interior Designers, Dental Clinics, Gyms">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-muted">Target City / Region</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-pin-map text-muted"></i></span>
+            <input type="text" class="form-control" [(ngModel)]="selectedCity" placeholder="e.g. Mumbai, Delhi, Pune, Bangalore">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-primary w-100 fw-semibold" (click)="executeSearch()" [disabled]="isLoading">
+            <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!isLoading" class="bi bi-radar me-1"></i>
+            {{ isLoading ? 'Extracting Places...' : 'Search Google Maps' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Import Alert Banner -->
+  <div *ngIf="importSuccessMessage" class="alert alert-success alert-dismissible fade show shadow-sm border-0 d-flex align-items-center gap-2 mb-4">
+    <i class="bi bi-check-circle-fill fs-5"></i>
+    <div>{{ importSuccessMessage }}</div>
+    <button type="button" class="btn-close ms-auto" (click)="importSuccessMessage = ''"></button>
+  </div>
+
+  <!-- Results Table Card -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <h6 class="fw-bold mb-0">Extracted Business Listings</h6>
+        <span class="badge bg-secondary-subtle text-secondary">{{ results.length }} Found</span>
+      </div>
+      <div>
+        <button class="btn btn-success btn-sm shadow-sm" [disabled]="selectedPlaces.size === 0" (click)="importSelected()">
+          <i class="bi bi-box-arrow-in-down me-1"></i> Import Selected ({{ selectedPlaces.size }}) to CRM Leads
+        </button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light small text-uppercase text-muted">
+          <tr>
+            <th width="40">
+              <input class="form-check-input" type="checkbox" (change)="toggleSelectAll($event)">
+            </th>
+            <th>Business Name</th>
+            <th>Contact Phone</th>
+            <th>Full Address</th>
+            <th>Rating & Reviews</th>
+            <th>Website</th>
+            <th>Status</th>
+            <th class="text-end">Quick Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let place of results">
+            <td>
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                [disabled]="place.is_already_lead"
+                [checked]="selectedPlaces.has(place.place_id)"
+                (change)="togglePlace(place.place_id)">
+            </td>
+            <td>
+              <div class="fw-bold">{{ place.name }}</div>
+              <small class="text-muted"><i class="bi bi-tag me-1"></i> {{ searchQuery }}</small>
+            </td>
+            <td>
+              <span class="fw-semibold text-primary font-monospace">{{ place.phone }}</span>
+            </td>
+            <td>
+              <small class="text-secondary"><i class="bi bi-geo-alt me-1"></i> {{ place.address }}</small>
+            </td>
+            <td>
+              <span class="badge bg-warning-subtle text-dark border border-warning-subtle">
+                <i class="bi bi-star-fill text-warning me-1"></i> {{ place.rating }} ({{ place.user_ratings_total }})
+              </span>
+            </td>
+            <td>
+              <a *ngIf="place.website" [href]="place.website" target="_blank" class="text-truncate d-inline-block small" style="max-width: 140px;">
+                {{ place.website }}
+              </a>
+              <span *ngIf="!place.website" class="text-muted small">N/A</span>
+            </td>
+            <td>
+              <span *ngIf="place.is_already_lead" class="badge bg-success-subtle text-success">
+                <i class="bi bi-check2 me-1"></i> In CRM
+              </span>
+              <span *ngIf="!place.is_already_lead" class="badge bg-light text-muted border">
+                New Prospect
+              </span>
+            </td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <a [href]="'tel:' + place.phone" class="btn btn-outline-primary" title="Call Now">
+                  <i class="bi bi-telephone-fill"></i>
+                </a>
+                <a [href]="'https://wa.me/' + place.phone.replace(' ', '')" target="_blank" class="btn btn-outline-success" title="Chat on WhatsApp">
+                  <i class="bi bi-whatsapp"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

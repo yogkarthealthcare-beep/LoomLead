@@ -1,0 +1,195 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="text-center max-w-3xl mx-auto mb-5">
+    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-semibold mb-2">
+      Flexible SaaS Plans
+    </span>
+    <h2 class="fw-bold mb-2">Transparent, Scalable Pricing for Every Business</h2>
+    <p class="text-muted">Choose the plan that fits your team. Upgrade or downgrade anytime with instant feature unlocking.</p>
+
+    <!-- Monthly / Annual Toggle -->
+    <div class="d-inline-flex align-items-center gap-3 bg-white p-2 rounded-pill shadow-sm border mt-3">
+      <span class="small fw-semibold" [class.text-primary]="!isYearly" [class.text-muted]="isYearly">Monthly Billing</span>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" role="switch" id="billingToggle" [(ngModel)]="isYearly" style="cursor: pointer; width: 44px; height: 22px;">
+      </div>
+      <span class="small fw-semibold" [class.text-primary]="isYearly" [class.text-muted]="!isYearly">
+        Annual Billing <span class="badge bg-success-subtle text-success rounded-pill ms-1">Save 20%</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- 4 Pricing Cards Row -->
+  <div class="row g-4 mb-5">
+    <div *ngFor="let plan of plans" class="col-xl-3 col-md-6">
+      <div class="card h-100 border-0 shadow-sm position-relative" [class.border-primary]="plan.popular" [class.border-2]="plan.popular" style="border-radius: 16px;">
+        <div *ngIf="plan.popular" class="position-absolute top-0 start-50 translate-middle badge bg-primary px-3 py-2 rounded-pill shadow">
+          ⭐ {{ plan.badge }}
+        </div>
+
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="fw-bold mb-0">{{ plan.name }}</h5>
+            <span *ngIf="!plan.popular" class="badge bg-light text-muted border">{{ plan.badge }}</span>
+          </div>
+          <p class="text-muted small mb-4" style="min-height: 40px;">{{ plan.tagline }}</p>
+
+          <div class="mb-4">
+            <div class="d-flex align-items-baseline">
+              <span class="h1 fw-bold mb-0">₹{{ isYearly ? plan.yearlyPrice : plan.monthlyPrice }}</span>
+              <span class="text-muted small ms-2">/ month</span>
+            </div>
+            <small *ngIf="isYearly && plan.monthlyPrice > 0" class="text-success fw-medium">Billed annually (₹{{ plan.yearlyPrice * 12 }}/yr)</small>
+          </div>
+
+          <!-- Quick Limits Pills -->
+          <ul class="list-unstyled small mb-4 pb-3 border-bottom">
+            <li class="mb-2"><i class="bi bi-person-check text-primary me-2"></i> <strong>{{ plan.users }}</strong></li>
+            <li class="mb-2"><i class="bi bi-database text-primary me-2"></i> <strong>{{ plan.leads }}</strong></li>
+            <li class="mb-2"><i class="bi bi-geo-alt-fill text-danger me-2"></i> <strong>{{ plan.gmaps }}</strong></li>
+          </ul>
+
+          <!-- Features List -->
+          <div class="flex-grow-1">
+            <h6 class="small fw-bold text-uppercase text-muted mb-3">Included Capabilities:</h6>
+            <ul class="list-unstyled small mb-4">
+              <li *ngFor="let feat of plan.features" class="mb-2 d-flex align-items-center gap-2">
+                <i *ngIf="feat.included" class="bi bi-check-circle-fill text-success"></i>
+                <i *ngIf="!feat.included" class="bi bi-x-circle text-muted opacity-50"></i>
+                <span [class.text-muted]="!feat.included" [class.text-decoration-line-through]="!feat.included">{{ feat.name }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Action Button -->
+          <button 
+            class="btn w-100 py-2 fw-semibold" 
+            [class.btn-primary]="plan.popular" 
+            [class.btn-outline-dark]="!plan.popular"
+            (click)="selectPlan(plan)">
+            {{ plan.monthlyPrice === 0 ? 'Current Free Plan' : 'Choose ' + plan.name }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature Comparison Table -->
+  <div class="card border-0 shadow-sm mt-5">
+    <div class="card-header bg-white py-3">
+      <h5 class="fw-bold mb-0"><i class="bi bi-table text-primary me-2"></i> Detailed Feature Comparison Checklist</h5>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle mb-0 text-center">
+        <thead class="table-light">
+          <tr>
+            <th class="text-start" style="width: 35%;">Capability & Module</th>
+            <th>Free</th>
+            <th>Basic</th>
+            <th class="table-primary text-primary">Medium Pro</th>
+            <th>Advanced</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-start fw-semibold">Team Members / Users Allowed</td>
+            <td>1 User</td>
+            <td>Up to 3</td>
+            <td class="fw-bold">Up to 10</td>
+            <td class="fw-bold text-success">Unlimited</td>
+          </tr>
+          <tr>
+            <td class="text-start fw-semibold">Lead Storage Capacity</td>
+            <td>50 Leads</td>
+            <td>1,000 Leads</td>
+            <td class="fw-bold">10,000 Leads</td>
+            <td class="fw-bold text-success">Unlimited</td>
+          </tr>
+          <tr>
+            <td class="text-start fw-semibold">Google Maps Leads Scraping / Mo</td>
+            <td>5 Searches</td>
+            <td>50 Searches</td>
+            <td class="fw-bold">500 Searches</td>
+            <td class="fw-bold text-success">2,500 Searches</td>
+          </tr>
+          <tr>
+            <td class="text-start fw-semibold">Autonomous AI Agent Copilot</td>
+            <td>5 queries / day</td>
+            <td>25 queries / day</td>
+            <td>150 queries / day</td>
+            <td class="fw-bold text-success">Unlimited</td>
+          </tr>
+          <tr>
+            <td class="text-start fw-semibold">Interactive Sales Pipeline (Kanban)</td>
+            <td><i class="bi bi-dash text-muted"></i></td>
+            <td><i class="bi bi-check-lg text-success fs-5"></i></td>
+            <td><i class="bi bi-check-lg text-success fs-5"></i></td>
+            <td><i class="bi bi-check-lg text-success fs-5"></i></td>
+          </tr>
+          <tr>
+            <td class="text-start fw-semibold">PDF, Excel, Word & CSV Import / Export</td>
+            <td><i class="bi bi-dash text-muted"></i></td>
+            <td>CSV only</td>
+            <td><i class="bi bi-check-lg text-success fs-5"></i></td>
+            <td><i class="bi bi-check-lg text-success fs-5"></i></td>
+          </tr>
+          <tr>
+            <td class="text-start fw-semibold">Quotations, Invoices & Payment Ledger</td>
+            <td><i class="bi bi-dash text-muted"></i></td>
+            <td><i class="bi bi-dash text-muted"></i></td>
+            <td><i class="bi bi-dash text-muted"></i></td>
+            <td><i class="bi bi-check-lg text-success fs-5"></i></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Checkout Confirmation Modal -->
+<div class="modal fade show d-block" *ngIf="showCheckoutModal" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold"><i class="bi bi-credit-card text-primary me-2"></i> Confirm Plan Subscription</h5>
+        <button type="button" class="btn-close" (click)="showCheckoutModal = false"></button>
+      </div>
+      <div class="modal-body">
+        <div class="p-3 bg-light rounded mb-3">
+          <div class="d-flex justify-content-between">
+            <span class="fw-bold">{{ selectedPlanForUpgrade?.name }}</span>
+            <span class="fw-bold text-primary">₹{{ isYearly ? selectedPlanForUpgrade?.yearlyPrice : selectedPlanForUpgrade?.monthlyPrice }} / mo</span>
+          </div>
+          <small class="text-muted">{{ isYearly ? 'Billed Annually' : 'Billed Monthly' }} • Instant Activation</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Coupon Code</label>
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="e.g. LAUNCH20">
+            <button class="btn btn-outline-secondary">Apply</button>
+          </div>
+        </div>
+        <div class="border-top pt-2">
+          <div class="d-flex justify-content-between small mb-1">
+            <span>Subtotal</span>
+            <span>₹{{ isYearly ? selectedPlanForUpgrade?.yearlyPrice * 12 : selectedPlanForUpgrade?.monthlyPrice }}</span>
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span>GST (18%)</span>
+            <span>₹{{ ((isYearly ? selectedPlanForUpgrade?.yearlyPrice * 12 : selectedPlanForUpgrade?.monthlyPrice) * 0.18).toFixed(0) }}</span>
+          </div>
+          <div class="d-flex justify-content-between fw-bold fs-6 mt-2 border-top pt-2">
+            <span>Total Payable</span>
+            <span class="text-success">₹{{ ((isYearly ? selectedPlanForUpgrade?.yearlyPrice * 12 : selectedPlanForUpgrade?.monthlyPrice) * 1.18).toFixed(0) }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="showCheckoutModal = false">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="showCheckoutModal = false">
+          Proceed to Payment Gateway <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

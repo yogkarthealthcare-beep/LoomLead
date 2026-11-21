@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment Variables & Secrets
+.env
+**/.env
+!.env.example
+!**/.env.example
+
+# Angular / Frontend Build Output
+dist/
+**/dist/
+.angular/
+**/.angular/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# File Uploads
+uploads/
+**/uploads/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

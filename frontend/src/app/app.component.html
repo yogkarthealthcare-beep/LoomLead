@@ -1,0 +1,171 @@
+<div class="d-flex">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="crm-sidebar d-flex flex-column flex-shrink-0 p-3 shadow">
+    <!-- Brand Logo -->
+    <a routerLink="/dashboard" class="d-flex align-items-center gap-2 mb-3 text-white text-decoration-none px-2">
+      <div class="bg-primary text-white rounded p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+        <i class="bi bi-rocket-takeoff-fill fs-5"></i>
+      </div>
+      <div>
+        <span class="fs-5 fw-bold tracking-tight">LoomLead</span>
+        <span class="badge bg-primary ms-1" style="font-size: 0.65rem;">SAAS</span>
+      </div>
+    </a>
+
+    <!-- Industry Context Pill -->
+    <div class="px-2 mb-3">
+      <div class="bg-dark p-2 rounded small text-slate-400 d-flex align-items-center justify-content-between border border-secondary border-opacity-25">
+        <span class="small"><i class="bi bi-buildings me-1 text-primary"></i> Real Estate</span>
+        <span class="badge bg-primary-subtle text-primary" style="font-size: 0.65rem;">PRO</span>
+      </div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li class="sidebar-heading">Core CRM</li>
+      <li class="nav-item">
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a routerLink="/leads" routerLinkActive="active" class="nav-link">
+          <i class="bi bi-people-fill"></i> Leads & Contacts
+        </a>
+      </li>
+      <li class="nav-item">
+        <a routerLink="/google-maps-leads" routerLinkActive="active" class="nav-link">
+          <i class="bi bi-geo-alt-fill text-danger"></i> Google Maps Finder
+        </a>
+      </li>
+
+      <li class="sidebar-heading">Commercial & Billing</li>
+      <li class="nav-item">
+        <a routerLink="/pricing" routerLinkActive="active" class="nav-link">
+          <i class="bi bi-cash-stack"></i> Plans & Billing
+        </a>
+      </li>
+      <li class="nav-item">
+        <a routerLink="/super-admin" routerLinkActive="active" class="nav-link">
+          <i class="bi bi-shield-lock-fill text-warning"></i> Super Admin
+        </a>
+      </li>
+    </ul>
+
+    <!-- Bottom User Profile Card -->
+    <div class="border-top border-secondary border-opacity-25 pt-3 px-2">
+      <div class="d-flex align-items-center gap-2">
+        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px;">
+          VM
+        </div>
+        <div class="overflow-hidden">
+          <div class="text-white small fw-semibold text-truncate">Vikram Mehta</div>
+          <div class="text-muted" style="font-size: 0.72rem;">Apex Realty Group</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN VIEWPORT CONTENT -->
+  <main class="flex-grow-1 min-vh-100 bg-light d-flex flex-column">
+    <!-- TOP NAVBAR -->
+    <nav class="crm-navbar navbar navbar-expand px-4">
+      <div class="container-fluid p-0">
+        <!-- Global Search Bar -->
+        <div class="input-group" style="max-width: 380px;">
+          <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" class="form-control bg-light border-0" placeholder="Global search leads, tasks, phone...">
+        </div>
+
+        <!-- Right Side Nav Utilities -->
+        <div class="d-flex align-items-center gap-3 ms-auto">
+          <!-- Active Plan Badge -->
+          <span class="badge plan-badge-medium px-3 py-2 rounded-pill small">
+            <i class="bi bi-star-fill text-warning me-1"></i> Medium Pro
+          </span>
+
+          <!-- Notification Bell -->
+          <div class="position-relative cursor-pointer">
+            <button class="btn btn-light rounded-circle p-2 position-relative shadow-sm">
+              <i class="bi bi-bell-fill text-secondary"></i>
+              <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+            </button>
+          </div>
+
+          <!-- Quick AI Assistant Button in Navbar -->
+          <button class="btn btn-outline-primary btn-sm rounded-pill fw-semibold shadow-sm d-flex align-items-center gap-1" (click)="toggleAiChat()">
+            <i class="bi bi-stars text-primary"></i> AI Copilot
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ROUTED PAGE CONTENT -->
+    <div class="flex-grow-1">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>
+
+<!-- ======================================================== -->
+<!-- FLOATING AI AGENT COPILOT CHAT DRAWER                   -->
+<!-- ======================================================== -->
+<div class="ai-copilot-pill" *ngIf="!isAiChatOpen" (click)="toggleAiChat()">
+  <i class="bi bi-robot fs-5"></i>
+  <span>AI Agent Copilot</span>
+  <span class="badge bg-white text-primary rounded-pill small">Active</span>
+</div>
+
+<!-- AI Chat Modal Drawer Window -->
+<div class="ai-chat-window" *ngIf="isAiChatOpen">
+  <!-- Header -->
+  <div class="ai-chat-header">
+    <div class="d-flex align-items-center gap-2">
+      <div class="rounded-circle bg-white text-primary p-1 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+        <i class="bi bi-robot"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">LoomLead AI Copilot</div>
+        <div style="font-size: 0.7rem; opacity: 0.9;">Ready for commands & navigation</div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-sm btn-link text-white p-0" (click)="toggleAiChat()">
+      <i class="bi bi-x-lg fs-5"></i>
+    </button>
+  </div>
+
+  <!-- Chat History -->
+  <div class="ai-chat-body">
+    <div *ngFor="let msg of chatMessages">
+      <div class="ai-bubble" [class.ai-bubble-agent]="msg.sender === 'agent'" [class.ai-bubble-user]="msg.sender === 'user'">
+        {{ msg.text }}
+        <div class="text-end" style="font-size: 0.65rem; opacity: 0.6; margin-top: 4px;">{{ msg.timestamp }}</div>
+      </div>
+
+      <!-- Quick Suggestion Action Chips -->
+      <div *ngIf="msg.suggestions && msg.suggestions.length > 0" class="mb-3">
+        <span *ngFor="let s of msg.suggestions" class="ai-suggestion-chip" (click)="sendAiPrompt(s)">
+          {{ s }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Input Footer -->
+  <div class="p-3 bg-white border-top">
+    <div class="input-group">
+      <input 
+        type="text" 
+        class="form-control" 
+        placeholder="Type command e.g. Hot leads dikhao..." 
+        [(ngModel)]="aiPromptInput" 
+        (keyup.enter)="sendAiPrompt()">
+      <button class="btn btn-primary" (click)="sendAiPrompt()" [disabled]="!aiPromptInput">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </div>
+    <div class="text-center mt-2">
+      <small class="text-muted" style="font-size: 0.7rem;">Press Enter to execute • English & Hinglish supported</small>
+    </div>
+  </div>
+</div>
