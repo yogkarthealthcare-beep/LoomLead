@@ -1,4 +1,4 @@
-/* Global Typography & Palette */
+/* Global Typography & Palette - Compact Enterprise SaaS Density */
 :root {
   --primary-color: #2563eb;
   --primary-dark: #1d4ed8;
@@ -6,36 +6,46 @@
   --sidebar-bg: #0f172a;
   --sidebar-hover: #1e293b;
   --sidebar-active: #2563eb;
-  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+html {
+  font-size: 13px; /* Compact base scale so everything fits comfortably */
 }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: #1e293b;
   background-color: #f8fafc;
+  font-size: 0.8125rem;
+  line-height: 1.4;
   overflow-x: hidden;
 }
 
-/* Sidebar Styling */
+/* Slim & Compact Sidebar */
 .crm-sidebar {
-  width: 260px;
+  width: 215px;
+  min-width: 215px;
+  max-width: 215px;
   min-height: 100vh;
   background: var(--sidebar-bg);
   color: #94a3b8;
-  transition: all 0.3s ease;
+  padding: 10px 8px !important;
+  transition: all 0.2s ease;
   z-index: 1000;
 }
 
 .crm-sidebar .nav-link {
   color: #94a3b8;
-  padding: 10px 16px;
-  border-radius: 8px;
-  margin: 3px 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 1px 4px;
+  font-size: 0.78rem;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: all 0.2s;
+  gap: 8px;
+  transition: all 0.15s;
 }
 
 .crm-sidebar .nav-link:hover {
@@ -46,83 +56,161 @@ body {
 .crm-sidebar .nav-link.active {
   color: #ffffff;
   background-color: var(--sidebar-active);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
 .crm-sidebar .sidebar-heading {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 14px 20px 6px;
+  letter-spacing: 0.06em;
+  padding: 8px 12px 3px;
   color: #64748b;
   font-weight: 700;
 }
 
-/* Top Navbar */
+/* Slim Top Navbar */
 .crm-navbar {
-  height: 64px;
+  height: 48px;
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
+  padding: 0 16px !important;
 }
 
-/* KPI Card */
+/* Compact Card & Tables */
+.card {
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+.table {
+  font-size: 0.78rem;
+}
+
+.table th {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 7px 10px !important;
+  background-color: #f8fafc;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 6px 10px !important;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.table tr:hover td {
+  background-color: #f8fafc;
+}
+
+/* Compact Forms & Inputs */
+.form-control, .form-select {
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  height: 31px;
+  border-radius: 6px;
+  border-color: #cbd5e1;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.input-group-text {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+/* Compact Buttons */
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 3px 9px;
+  height: 29px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.btn-action-icon {
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  border-radius: 4px;
+}
+
+/* Compact KPI Card */
 .kpi-card {
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #ffffff;
-  padding: 20px;
+  padding: 12px 16px;
   box-shadow: var(--card-shadow);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 .kpi-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.15rem;
 }
 
-/* Floating AI Agent Copilot Widget */
+/* Sleek Floating AI Agent Copilot Widget */
 .ai-copilot-pill {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: 16px;
+  right: 16px;
   z-index: 1050;
   background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
   color: white;
-  padding: 12px 20px;
-  border-radius: 50px;
-  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+  padding: 6px 12px;
+  border-radius: 30px;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.28);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  font-size: 0.75rem;
   font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.2s ease;
 }
 
 .ai-copilot-pill:hover {
-  transform: scale(1.05);
-  box-shadow: 0 12px 30px rgba(124, 58, 237, 0.5);
+  transform: scale(1.04);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.4);
 }
 
 .ai-chat-window {
   position: fixed;
-  bottom: 84px;
-  right: 24px;
-  width: 380px;
-  height: 520px;
+  bottom: 56px;
+  right: 16px;
+  width: 330px;
+  height: 440px;
   background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
   border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
@@ -133,7 +221,7 @@ body {
 .ai-chat-header {
   background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
   color: white;
-  padding: 14px 18px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -141,18 +229,18 @@ body {
 
 .ai-chat-body {
   flex: 1;
-  padding: 16px;
+  padding: 12px;
   overflow-y: auto;
   background: #f8fafc;
 }
 
 .ai-bubble {
-  max-width: 82%;
-  padding: 10px 14px;
-  border-radius: 14px;
-  font-size: 0.88rem;
-  margin-bottom: 12px;
-  line-height: 1.45;
+  max-width: 85%;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
 .ai-bubble-agent {
@@ -173,36 +261,29 @@ body {
   display: inline-block;
   background: #e0e7ff;
   color: #3730a3;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.68rem;
   font-weight: 500;
   cursor: pointer;
-  margin: 3px;
-  transition: all 0.2s;
+  margin: 2px;
+  transition: all 0.15s;
 }
 
 .ai-suggestion-chip:hover {
   background: #c7d2fe;
 }
 
-/* Plan Badge */
-.plan-badge-free {
-  background-color: #94a3b8;
-  color: white;
+/* Compact Badges */
+.badge-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
 }
 
-.plan-badge-basic {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.plan-badge-medium {
-  background-color: #8b5cf6;
-  color: white;
-}
-
-.plan-badge-advanced {
-  background-color: #f59e0b;
-  color: white;
-}
+.plan-badge-free { background-color: #94a3b8; color: white; }
+.plan-badge-basic { background-color: #3b82f6; color: white; }
+.plan-badge-medium { background-color: #8b5cf6; color: white; }
+.plan-badge-advanced { background-color: #f59e0b; color: white; }
