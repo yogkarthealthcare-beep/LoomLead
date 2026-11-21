@@ -43,7 +43,7 @@ export interface GooglePlaceResult {
   providedIn: 'root'
 })
 export class CrmService {
-  private apiUrl = 'http://localhost:5000/api/v1';
+  private apiUrl = 'http://66.116.248.35:5050/api/v1';
 
   // Realistic fallback demo data
   private demoLeads: Lead[] = [
