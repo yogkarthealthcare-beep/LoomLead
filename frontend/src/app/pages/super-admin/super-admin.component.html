@@ -29,29 +29,29 @@
     <div class="col-md-3">
       <div class="kpi-card">
         <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Monthly Recurring Revenue (MRR)</div>
-        <h4 class="fw-bold my-1 text-primary" style="font-size: 1.35rem;">₹1,48,990</h4>
-        <span class="text-success fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-arrow-up-short"></i> +22% this month</span>
+        <h4 class="fw-bold my-1 text-primary" style="font-size: 1.35rem;">₹{{ totalMrr | number }}</h4>
+        <span class="text-success fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-arrow-up-short"></i> Live Platform MRR</span>
       </div>
     </div>
     <div class="col-md-3">
       <div class="kpi-card">
         <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Total Registered Companies</div>
-        <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">48</h4>
-        <span class="text-muted" style="font-size: 0.68rem;">Across 6 industries</span>
+        <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">{{ totalTenants }}</h4>
+        <span class="text-muted" style="font-size: 0.68rem;">Active tenant instances</span>
       </div>
     </div>
     <div class="col-md-3">
       <div class="kpi-card">
         <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Active Paying Subscribers</div>
-        <h4 class="fw-bold my-1 text-success" style="font-size: 1.35rem;">38</h4>
-        <span class="text-success fw-semibold" style="font-size: 0.68rem;">92% retention rate</span>
+        <h4 class="fw-bold my-1 text-success" style="font-size: 1.35rem;">{{ activeSubscribers }}</h4>
+        <span class="text-success fw-semibold" style="font-size: 0.68rem;">Verified active</span>
       </div>
     </div>
     <div class="col-md-3">
       <div class="kpi-card">
         <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Total Platform Leads</div>
-        <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">28,450</h4>
-        <span class="text-primary fw-semibold" style="font-size: 0.68rem;">14,200 from Google Maps</span>
+        <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">{{ totalPlatformLeads }}</h4>
+        <span class="text-primary fw-semibold" style="font-size: 0.68rem;">Stored in PostgreSQL</span>
       </div>
     </div>
   </div>

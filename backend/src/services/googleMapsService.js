@@ -171,9 +171,8 @@ class GoogleMapsService {
       results = await this.scrapeLiveGoogleMaps(fullQuery, location);
     }
 
-    // 3. Fallback generator if both scraping and API encounter an obstacle
-    if (results.length === 0) {
-      results = this.generateRealisticMockResults(query, location);
+    if (!results) {
+      results = [];
     }
 
     // Check which places are already imported as leads in the tenant's database
@@ -209,19 +208,7 @@ class GoogleMapsService {
     };
   }
 
-  /**
-   * Helper fallback when network blocks external calls
-   */
-  generateRealisticMockResults(query, location) {
-    const city = location || 'Mumbai';
-    return [
-      { place_id: 'pl_' + Math.random().toString(36).substring(7), name: `Elite ${query} Hub`, phone: '+91 98204 88121', address: `Shop 14, Lotus Plaza, Andheri, ${city}`, rating: 4.8, user_ratings_total: 194, city, website: `https://elite${query.toLowerCase().replace(/\s+/g, '')}.in` },
-      { place_id: 'pl_' + Math.random().toString(36).substring(7), name: `Prime Care ${query} Center`, phone: '+91 97112 44321', address: `Plot 52, Ring Road, Sector 18, ${city}`, rating: 4.9, user_ratings_total: 312, city, website: `https://primecare${query.toLowerCase().replace(/\s+/g, '')}.in` },
-      { place_id: 'pl_' + Math.random().toString(36).substring(7), name: `Vanguard ${query} Solutions`, phone: '+91 99308 77654', address: `Level 2, Infinity Tower, MIDC, ${city}`, rating: 4.6, user_ratings_total: 87, city, website: `https://vanguard${query.toLowerCase().replace(/\s+/g, '')}.in` },
-      { place_id: 'pl_' + Math.random().toString(36).substring(7), name: `Metro City ${query}`, phone: '+91 98451 99887', address: `Station Road, Near Metro Gate 3, ${city}`, rating: 4.5, user_ratings_total: 65, city, website: `https://metrocity${query.toLowerCase().replace(/\s+/g, '')}.in` },
-      { place_id: 'pl_' + Math.random().toString(36).substring(7), name: `Apex Signature ${query}`, phone: '+91 98115 33221', address: `Galleria Complex, FC Road, ${city}`, rating: 4.7, user_ratings_total: 142, city, website: `https://apex${query.toLowerCase().replace(/\s+/g, '')}.in` }
-    ];
-  }
+
 
   /**
    * Bulk import selected Google Maps businesses into the CRM Leads table

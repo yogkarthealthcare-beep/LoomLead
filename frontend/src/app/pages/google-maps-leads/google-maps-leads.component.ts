@@ -11,8 +11,8 @@ import { CrmService, GooglePlaceResult } from '../../services/crm.service';
   templateUrl: './google-maps-leads.component.html'
 })
 export class GoogleMapsLeadsComponent implements OnInit {
-  searchQuery: string = 'Interior Designers';
-  selectedCity: string = 'Mumbai';
+  searchQuery: string = '';
+  selectedCity: string = '';
   isLoading: boolean = false;
   results: GooglePlaceResult[] = [];
   selectedPlaces: Set<string> = new Set();
@@ -31,7 +31,7 @@ export class GoogleMapsLeadsComponent implements OnInit {
   constructor(private crmService: CrmService) {}
 
   ngOnInit(): void {
-    this.executeSearch();
+    // Starts clean - ready for user search
   }
 
   applyTrending(keyword: { label: string; city: string }): void {
@@ -41,16 +41,18 @@ export class GoogleMapsLeadsComponent implements OnInit {
   }
 
   executeSearch(): void {
+    if (!this.searchQuery.trim()) return;
     this.isLoading = true;
     this.importSuccessMessage = '';
     this.selectedPlaces.clear();
 
     this.crmService.searchGoogleMaps(this.searchQuery, this.selectedCity).subscribe({
       next: (data) => {
-        this.results = data;
+        this.results = data || [];
         this.isLoading = false;
       },
       error: () => {
+        this.results = [];
         this.isLoading = false;
       }
     });

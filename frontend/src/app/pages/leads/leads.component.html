@@ -188,9 +188,18 @@
             </td>
           </tr>
           <tr *ngIf="filteredLeads.length === 0">
-            <td colspan="10" class="text-center py-4 text-muted">
-              <i class="bi bi-inbox fs-4 d-block mb-1"></i>
-              <span style="font-size: 0.78rem;">No leads match your search criteria.</span>
+            <td colspan="10" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary opacity-50"></i>
+              <div class="fw-semibold mb-1" style="font-size: 0.85rem;">No Leads Found in Database</div>
+              <p class="text-muted small mb-3" style="font-size: 0.75rem;">Your CRM database is clean. Start by discovering leads from Google Maps or add manual leads.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <a routerLink="/google-maps-leads" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-geo-alt-fill text-danger me-1"></i> Extract Google Maps Leads
+                </a>
+                <button class="btn btn-sm btn-primary" (click)="openAddLeadModal()">
+                  <i class="bi bi-plus-lg me-1"></i> Add Manual Lead
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>

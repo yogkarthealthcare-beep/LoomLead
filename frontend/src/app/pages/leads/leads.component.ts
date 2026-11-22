@@ -125,6 +125,9 @@ export class LeadsComponent implements OnInit {
   }
 
   submitCallLog(): void {
+    if (this.activeLeadForCall) {
+      this.crmService.logCall(this.activeLeadForCall.id, this.callOutcome, this.callDuration, this.callNotes).subscribe();
+    }
     this.callSuccessToast = `Call logged with ${this.activeLeadForCall?.name} (Outcome: ${this.callOutcome})`;
     this.showCallModal = false;
     setTimeout(() => this.callSuccessToast = '', 4000);
@@ -137,8 +140,10 @@ export class LeadsComponent implements OnInit {
 
   deleteLead(id: string): void {
     if (confirm('Are you sure you want to delete this lead?')) {
-      this.leads = this.leads.filter(l => l.id !== id);
-      this.applyFilters();
+      this.crmService.deleteLead(id).subscribe(() => {
+        this.leads = this.leads.filter(l => l.id !== id);
+        this.applyFilters();
+      });
     }
   }
 }

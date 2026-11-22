@@ -2,6 +2,19 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { CrmService } from '../../services/crm.service';
+
+export interface TenantRow {
+  id: string;
+  name: string;
+  owner: string;
+  email: string;
+  plan: string;
+  users: number;
+  leads: number;
+  expiry: string;
+  status: string;
+}
 
 @Component({
   selector: 'app-super-admin',
@@ -13,19 +26,33 @@ export class SuperAdminComponent implements OnInit {
   searchTerm: string = '';
   selectedStatus: string = 'All';
 
-  tenants = [
-    { id: '1', name: 'Apex Realty Group', owner: 'Vikram Mehta', email: 'vikram@apexrealty.com', plan: 'Medium Pro', users: 3, leads: 142, expiry: '2026-12-20', status: 'Active', mrr: 2999 },
-    { id: '2', name: 'CarePlus Dental Clinics', owner: 'Dr. Sameer Joshi', email: 'dr.joshi@careplus.org', plan: 'Advanced', users: 12, leads: 1840, expiry: '2027-01-15', status: 'Active', mrr: 7999 },
-    { id: '3', name: 'Zenith Architecture Studio', owner: 'Ananya Deshmukh', email: 'ananya@zenithdesign.in', plan: 'Basic', users: 2, leads: 310, expiry: '2026-11-28', status: 'Active', mrr: 999 },
-    { id: '4', name: 'IronCore Fitness Clubs', owner: 'Vikram Chawla', email: 'v.chawla@fitnesstransform.com', plan: 'Free', users: 1, leads: 48, expiry: '2026-12-05', status: 'Active', mrr: 0 },
-    { id: '5', name: 'Metro EduTech Institute', owner: 'Ramesh Sundaram', email: 'ramesh@metroedutech.in', plan: 'Medium Pro', users: 8, leads: 2450, expiry: '2026-11-10', status: 'Expired', mrr: 0 }
-  ];
-
-  filteredTenants = [...this.tenants];
+  tenants: TenantRow[] = [];
+  filteredTenants: TenantRow[] = [];
   impersonationToast: string = '';
 
+  totalTenants: number = 0;
+  activeSubscribers: number = 0;
+  totalPlatformLeads: number = 0;
+  totalMrr: number = 0;
+
+  constructor(private crmService: CrmService) {}
+
   ngOnInit(): void {
-    this.filterTenants();
+    this.crmService.getSuperAdminTenants().subscribe(data => {
+      this.tenants = data;
+      this.computeStats();
+      this.filterTenants();
+    });
+  }
+
+  computeStats(): void {
+    this.totalTenants = this.tenants.length;
+    this.activeSubscribers = this.tenants.filter(t => t.status === 'Active').length;
+    this.totalPlatformLeads = this.tenants.reduce((sum, t) => sum + (t.leads || 0), 0);
+    this.totalMrr = this.tenants.reduce((sum, t) => {
+      const price = t.plan === 'Advanced' ? 7999 : (t.plan === 'Medium Pro' ? 2999 : (t.plan === 'Basic' ? 999 : 0));
+      return sum + price;
+    }, 0);
   }
 
   filterTenants(): void {
@@ -40,12 +67,13 @@ export class SuperAdminComponent implements OnInit {
     });
   }
 
-  impersonate(tenant: any): void {
+  impersonate(tenant: TenantRow): void {
     this.impersonationToast = `Logging in as Tenant Admin: "${tenant.owner}" (${tenant.name}). Redirecting...`;
     setTimeout(() => this.impersonationToast = '', 4000);
   }
 
-  toggleStatus(tenant: any): void {
+  toggleStatus(tenant: TenantRow): void {
     tenant.status = tenant.status === 'Active' ? 'Suspended' : 'Active';
+    this.computeStats();
   }
 }

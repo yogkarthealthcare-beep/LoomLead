@@ -3,7 +3,7 @@
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
     <div>
       <h5 class="fw-bold mb-0" style="font-size: 1.15rem;">Executive Sales Dashboard</h5>
-      <span class="text-muted" style="font-size: 0.72rem;">Welcome back, Vikram Mehta • Apex Realty Group (Medium Pro Plan)</span>
+      <span class="text-muted" style="font-size: 0.72rem;">Live Sales CRM Performance • Apex Realty Group</span>
     </div>
     <div class="d-flex align-items-center gap-1">
       <!-- Date Range Selector -->
@@ -27,8 +27,8 @@
       <div class="d-flex align-items-center gap-2">
         <div class="badge bg-primary px-2 py-1 rounded-pill" style="font-size: 0.68rem;"><i class="bi bi-shield-check me-1"></i> Medium Pro</div>
         <div>
-          <span class="fw-semibold" style="font-size: 0.76rem;">142 / 10,000 Leads • 3 / 10 Users • 42 / 500 Google Maps Extractions</span>
-          <small class="text-slate-300 opacity-75 ms-2" style="font-size: 0.68rem;">(Renews Dec 20, 2026)</small>
+          <span class="fw-semibold" style="font-size: 0.76rem;">{{ totalLeads }} / 10,000 Leads • 1 / 10 Users • Active Instance</span>
+          <small class="text-slate-300 opacity-75 ms-2" style="font-size: 0.68rem;">(Live PostgreSQL Database)</small>
         </div>
       </div>
       <div>
@@ -46,8 +46,8 @@
       <div class="kpi-card d-flex align-items-center justify-content-between">
         <div>
           <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Total Leads</div>
-          <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">142</h4>
-          <span class="text-success fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-arrow-up-short"></i> +14% vs last mo</span>
+          <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">{{ totalLeads }}</h4>
+          <span class="text-success fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-check2 me-1"></i> Live CRM Database</span>
         </div>
         <div class="kpi-icon bg-primary-subtle text-primary">
           <i class="bi bi-people-fill"></i>
@@ -59,9 +59,9 @@
     <div class="col-xl-3 col-md-6">
       <div class="kpi-card d-flex align-items-center justify-content-between">
         <div>
-          <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Calls Made Today</div>
-          <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">28</h4>
-          <span class="text-primary fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-telephone-outbound-fill me-1"></i> 19 connected</span>
+          <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Calls Logged</div>
+          <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">{{ callsToday }}</h4>
+          <span class="text-primary fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-telephone-outbound-fill me-1"></i> Logged calls</span>
         </div>
         <div class="kpi-icon bg-info-subtle text-info">
           <i class="bi bi-telephone-fill"></i>
@@ -73,9 +73,9 @@
     <div class="col-xl-3 col-md-6">
       <div class="kpi-card d-flex align-items-center justify-content-between">
         <div>
-          <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Won Deals (Conv. 22%)</div>
-          <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">18</h4>
-          <span class="text-success fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-check-circle-fill me-1"></i> ₹92.4L Won</span>
+          <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Won Deals (Conv. {{ conversionRate }}%)</div>
+          <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">{{ wonDeals }}</h4>
+          <span class="text-success fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-check-circle-fill me-1"></i> ₹{{ wonRevenue | number }} Won</span>
         </div>
         <div class="kpi-icon bg-success-subtle text-success">
           <i class="bi bi-trophy-fill"></i>
@@ -88,8 +88,8 @@
       <div class="kpi-card d-flex align-items-center justify-content-between">
         <div>
           <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">Pipeline Revenue</div>
-          <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">₹3.85 Cr</h4>
-          <span class="text-warning fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-hourglass-split me-1"></i> 34 proposals</span>
+          <h4 class="fw-bold my-1 text-dark" style="font-size: 1.35rem;">₹{{ pipelineRevenue | number }}</h4>
+          <span class="text-warning fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-hourglass-split me-1"></i> Active Pipeline</span>
         </div>
         <div class="kpi-icon bg-warning-subtle text-warning">
           <i class="bi bi-currency-rupee"></i>
@@ -105,7 +105,7 @@
       <div class="card border-0 shadow-sm h-100">
         <div class="card-header bg-white border-0 py-2 px-3 d-flex align-items-center justify-content-between">
           <span class="fw-bold" style="font-size: 0.82rem;"><i class="bi bi-graph-up text-primary me-1"></i> Monthly Won Revenue Trend</span>
-          <span class="badge bg-light text-muted border" style="font-size: 0.65rem;">₹ in Lakhs</span>
+          <span class="badge bg-light text-muted border" style="font-size: 0.65rem;">₹ in INR</span>
         </div>
         <div class="card-body p-2">
           <div style="height: 200px;">
@@ -151,11 +151,16 @@
       <div class="card border-0 shadow-sm h-100">
         <div class="card-header bg-white border-0 py-2 px-3 d-flex align-items-center justify-content-between">
           <span class="fw-bold" style="font-size: 0.82rem;"><i class="bi bi-check2-circle text-primary me-1"></i> Today's Follow-up Queue</span>
-          <span class="badge bg-danger-subtle text-danger" style="font-size: 0.65rem;">{{ tasksToday.length }} Pending</span>
+          <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">{{ tasksToday.length }} Pending</span>
         </div>
-        <div class="card-body p-0">
-          <div class="list-group list-group-flush" style="font-size: 0.78rem;">
-            <div *ngFor="let t of tasksToday" class="list-group-item d-flex align-items-center justify-content-between py-2 px-3">
+        <div class="card-body p-2">
+          <div *ngIf="tasksToday.length === 0" class="text-center py-4 text-muted">
+            <i class="bi bi-check-circle fs-3 text-success opacity-50 d-block mb-1"></i>
+            <span style="font-size: 0.78rem;">No pending tasks for today. All clean!</span>
+          </div>
+
+          <div *ngIf="tasksToday.length > 0" class="list-group list-group-flush" style="font-size: 0.78rem;">
+            <div *ngFor="let t of tasksToday" class="list-group-item d-flex align-items-center justify-content-between py-2 px-2">
               <div class="d-flex align-items-center gap-2">
                 <input class="form-check-input mt-0" type="checkbox" style="width: 13px; height: 13px;" [checked]="t.status === 'Completed'" (change)="toggleTask(t)">
                 <div>
