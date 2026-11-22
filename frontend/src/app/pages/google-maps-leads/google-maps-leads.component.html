@@ -45,14 +45,14 @@
           <label class="form-label fw-semibold text-muted mb-1" style="font-size: 0.72rem;">Business Niche / Keyword</label>
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-white py-0"><i class="bi bi-search text-muted" style="font-size: 0.72rem;"></i></span>
-            <input type="text" class="form-control" style="height: 30px; font-size: 0.76rem;" [(ngModel)]="searchQuery" placeholder="e.g. Interior Designers, Dental Clinics, Gyms">
+            <input type="text" class="form-control" style="height: 30px; font-size: 0.76rem;" [(ngModel)]="searchQuery" (keyup.enter)="executeSearch()" placeholder="e.g. top coaching institute, Interior Designers, Gyms">
           </div>
         </div>
         <div class="col-md-4">
           <label class="form-label fw-semibold text-muted mb-1" style="font-size: 0.72rem;">Target City / Region</label>
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-white py-0"><i class="bi bi-pin-map text-muted" style="font-size: 0.72rem;"></i></span>
-            <input type="text" class="form-control" style="height: 30px; font-size: 0.76rem;" [(ngModel)]="selectedCity" placeholder="e.g. Mumbai, Delhi, Pune, Bangalore">
+            <input type="text" class="form-control" style="height: 30px; font-size: 0.76rem;" [(ngModel)]="selectedCity" (keyup.enter)="executeSearch()" placeholder="e.g. Kanpur, Mumbai, Delhi, Pune">
           </div>
         </div>
         <div class="col-md-3">

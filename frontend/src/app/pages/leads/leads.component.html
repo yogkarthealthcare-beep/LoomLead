@@ -6,14 +6,17 @@
       <span class="text-muted" style="font-size: 0.72rem;">Total {{ filteredLeads.length }} leads active in your database.</span>
     </div>
     <div class="d-flex align-items-center gap-1">
+      <a routerLink="/google-maps-leads" class="btn btn-primary btn-sm shadow-sm" style="font-size: 0.75rem;">
+        <i class="bi bi-geo-alt-fill text-danger me-1"></i> Google Maps Finder
+      </a>
       <button class="btn btn-outline-secondary btn-sm shadow-sm" (click)="triggerPlanGating('Automated Workflow Rules')">
         <i class="bi bi-gear-fill me-1 text-secondary"></i> Automations <i class="bi bi-lock-fill text-warning ms-1" style="font-size: 0.68rem;"></i>
       </button>
       <button class="btn btn-outline-primary btn-sm shadow-sm" (click)="triggerPlanGating('Data Import / Export (Excel, PDF, Word)')">
         <i class="bi bi-box-arrow-up me-1"></i> Export Data <i class="bi bi-lock-fill text-warning ms-1" style="font-size: 0.68rem;"></i>
       </button>
-      <button class="btn btn-primary btn-sm shadow-sm" (click)="openAddLeadModal()">
-        <i class="bi bi-plus-lg me-1"></i> Add Lead
+      <button class="btn btn-outline-secondary btn-sm shadow-sm" (click)="openAddLeadModal()">
+        <i class="bi bi-plus-lg me-1"></i> Add Manual
       </button>
     </div>
   </div>
@@ -191,10 +194,13 @@
             <td colspan="10" class="text-center py-5 text-muted">
               <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary opacity-50"></i>
               <div class="fw-semibold mb-1" style="font-size: 0.85rem;">No Leads Found in Database</div>
-              <p class="text-muted small mb-3" style="font-size: 0.75rem;">Your CRM database is clean. Start by discovering leads from Google Maps or add manual leads.</p>
-              <div class="d-flex justify-content-center gap-2">
+              <p class="text-muted small mb-3" style="font-size: 0.75rem;">Your CRM database is clean. Search Google Maps to extract live business listings or add manual leads.</p>
+              <div class="d-flex justify-content-center flex-wrap gap-2">
+                <a *ngIf="searchTerm" [routerLink]="['/google-maps-leads']" [queryParams]="{ q: searchTerm }" class="btn btn-sm btn-success fw-semibold shadow-sm">
+                  <i class="bi bi-radar me-1"></i> Search "{{ searchTerm }}" on Google Maps Finder
+                </a>
                 <a routerLink="/google-maps-leads" class="btn btn-sm btn-outline-primary">
-                  <i class="bi bi-geo-alt-fill text-danger me-1"></i> Extract Google Maps Leads
+                  <i class="bi bi-geo-alt-fill text-danger me-1"></i> Open Google Maps Finder
                 </a>
                 <button class="btn btn-sm btn-primary" (click)="openAddLeadModal()">
                   <i class="bi bi-plus-lg me-1"></i> Add Manual Lead

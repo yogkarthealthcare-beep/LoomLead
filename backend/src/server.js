@@ -18,6 +18,9 @@ const { getDashboardStats } = require('./controllers/dashboardController');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust reverse proxy (Nginx) for SSL & rate limiting
+app.set('trust proxy', 1);
+
 // Security & Middlewares
 app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
@@ -27,7 +30,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Rate limiter for API protection
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 1000,
+  validate: { xForwardedForHeader: false },
   message: { success: false, message: 'Too many requests from this IP, please try again later.' },
 });
 app.use('/api/', limiter);

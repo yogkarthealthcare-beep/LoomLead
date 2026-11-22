@@ -33,7 +33,7 @@
       </li>
       <li class="nav-item">
         <a routerLink="/google-maps-leads" routerLinkActive="active" class="nav-link">
-          <i class="bi bi-geo-alt-fill text-danger"></i> <span>Google Maps</span>
+          <i class="bi bi-geo-alt-fill text-danger"></i> <span>Google Maps Finder</span>
         </a>
       </li>
 
@@ -69,10 +69,19 @@
     <!-- COMPACT TOP NAVBAR -->
     <nav class="crm-navbar navbar navbar-expand">
       <div class="container-fluid p-0">
-        <!-- Global Search Bar -->
-        <div class="input-group" style="max-width: 320px;">
+        <!-- Global Search Bar with direct Google Maps Leads Finder -->
+        <div class="input-group" style="max-width: 340px;">
           <span class="input-group-text bg-light border-0 py-1"><i class="bi bi-search text-muted" style="font-size: 0.75rem;"></i></span>
-          <input type="text" class="form-control bg-light border-0" style="height: 29px; font-size: 0.75rem;" placeholder="Search leads, tasks, phone...">
+          <input 
+            type="text" 
+            class="form-control bg-light border-0" 
+            style="height: 29px; font-size: 0.75rem;" 
+            placeholder="Search Google Maps leads, niche, city..."
+            [(ngModel)]="globalSearchText"
+            (keyup.enter)="onGlobalSearch()">
+          <button class="btn btn-primary btn-sm py-0 px-2" type="button" (click)="onGlobalSearch()" title="Find Leads on Google Maps">
+            <i class="bi bi-radar" style="font-size: 0.72rem;"></i>
+          </button>
         </div>
 
         <!-- Right Side Nav Utilities -->

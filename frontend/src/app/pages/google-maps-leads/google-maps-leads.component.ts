@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { CrmService, GooglePlaceResult } from '../../services/crm.service';
 
 @Component({
@@ -19,19 +19,30 @@ export class GoogleMapsLeadsComponent implements OnInit {
   importSuccessMessage: string = '';
 
   trendingKeywords = [
+    { label: 'Coaching Institutes', city: 'Kanpur' },
     { label: 'Real Estate Agents', city: 'Mumbai' },
     { label: 'Dental Clinics', city: 'Delhi' },
     { label: 'Gyms & Fitness', city: 'Bangalore' },
     { label: 'Interior Designers', city: 'Pune' },
     { label: 'Chartered Accountants', city: 'Hyderabad' },
-    { label: 'Cosmetic Clinics', city: 'Gurgaon' },
     { label: 'Digital Marketing Agencies', city: 'Ahmedabad' }
   ];
 
-  constructor(private crmService: CrmService) {}
+  constructor(
+    private crmService: CrmService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
-    // Starts clean - ready for user search
+    this.route.queryParams.subscribe(params => {
+      if (params['q']) {
+        this.searchQuery = params['q'];
+        if (params['city']) {
+          this.selectedCity = params['city'];
+        }
+        this.executeSearch();
+      }
+    });
   }
 
   applyTrending(keyword: { label: string; city: string }): void {
@@ -41,12 +52,14 @@ export class GoogleMapsLeadsComponent implements OnInit {
   }
 
   executeSearch(): void {
-    if (!this.searchQuery.trim()) return;
+    const q = this.searchQuery.trim();
+    if (!q) return;
+
     this.isLoading = true;
     this.importSuccessMessage = '';
     this.selectedPlaces.clear();
 
-    this.crmService.searchGoogleMaps(this.searchQuery, this.selectedCity).subscribe({
+    this.crmService.searchGoogleMaps(q, this.selectedCity.trim()).subscribe({
       next: (data) => {
         this.results = data || [];
         this.isLoading = false;

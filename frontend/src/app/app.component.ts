@@ -22,6 +22,7 @@ export class AppComponent {
   title = 'LoomLead CRM';
   isAiChatOpen: boolean = false;
   aiPromptInput: string = '';
+  globalSearchText: string = '';
 
   chatMessages: ChatMessage[] = [
     {
@@ -38,6 +39,12 @@ export class AppComponent {
   ];
 
   constructor(private crmService: CrmService, private router: Router) {}
+
+  onGlobalSearch(): void {
+    if (!this.globalSearchText.trim()) return;
+    this.router.navigate(['/google-maps-leads'], { queryParams: { q: this.globalSearchText.trim() } });
+    this.globalSearchText = '';
+  }
 
   toggleAiChat(): void {
     this.isAiChatOpen = !this.isAiChatOpen;
