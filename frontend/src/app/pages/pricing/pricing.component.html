@@ -1,6 +1,9 @@
 <div class="container-fluid py-3 px-3">
   <!-- Header -->
   <div class="text-center max-w-3xl mx-auto mb-4">
+    <div class="mb-2">
+      <img src="assets/logo-full.png" alt="LoomLead" style="height: 38px; object-fit: contain;">
+    </div>
     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill fw-semibold mb-1" style="font-size: 0.7rem;">
       Flexible SaaS Plans
     </span>
@@ -152,7 +155,10 @@
   <div class="modal-dialog modal-dialog-centered modal-sm" style="max-width: 380px;">
     <div class="modal-content border-0 shadow">
       <div class="modal-header py-2 px-3">
-        <h6 class="modal-title fw-bold mb-0" style="font-size: 0.9rem;"><i class="bi bi-credit-card text-primary me-1"></i> Confirm Subscription</h6>
+        <h6 class="modal-title fw-bold mb-0 d-flex align-items-center gap-1" style="font-size: 0.9rem;">
+          <img src="assets/logo-icon.png" alt="LoomLead" style="width: 18px; height: 18px; object-fit: contain;">
+          <span>Confirm Subscription</span>
+        </h6>
         <button type="button" class="btn-close py-1" (click)="showCheckoutModal = false"></button>
       </div>
       <div class="modal-body p-3">

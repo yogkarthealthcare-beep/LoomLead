@@ -3,12 +3,10 @@
   <aside class="crm-sidebar d-flex flex-column flex-shrink-0 shadow-sm">
     <!-- Brand Logo -->
     <a routerLink="/dashboard" class="d-flex align-items-center gap-2 mb-2 text-white text-decoration-none px-2 pt-1">
-      <div class="bg-primary text-white rounded p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px;">
-        <i class="bi bi-rocket-takeoff-fill" style="font-size: 0.85rem;"></i>
-      </div>
-      <div class="d-flex align-items-center gap-1">
-        <span class="fw-bold tracking-tight text-white" style="font-size: 0.95rem;">LoomLead</span>
-        <span class="badge bg-primary" style="font-size: 0.6rem; padding: 2px 4px;">SAAS</span>
+      <img src="assets/logo-icon.png" alt="LoomLead" style="width: 26px; height: 26px; object-fit: contain;">
+      <div class="d-flex align-items-baseline gap-1">
+        <span class="fw-bold tracking-tight text-white" style="font-size: 1.05rem; letter-spacing: -0.02em;">loom<span style="color: #f97316;">Lead</span></span>
+        <span class="badge bg-primary" style="font-size: 0.58rem; padding: 1px 4px;">SAAS</span>
       </div>
     </a>
 
@@ -91,8 +89,9 @@
           </button>
 
           <!-- Quick AI Assistant Button in Navbar -->
-          <button class="btn btn-outline-primary btn-sm rounded-pill shadow-sm" (click)="toggleAiChat()" style="font-size: 0.72rem; padding: 2px 8px; height: 26px;">
-            <i class="bi bi-stars text-primary"></i> AI Copilot
+          <button class="btn btn-outline-primary btn-sm rounded-pill shadow-sm d-inline-flex align-items-center gap-1" (click)="toggleAiChat()" style="font-size: 0.72rem; padding: 2px 8px; height: 26px;">
+            <img src="assets/logo-icon.png" alt="AI" style="width: 14px; height: 14px; object-fit: contain;">
+            <span>AI Copilot</span>
           </button>
         </div>
       </div>
@@ -109,7 +108,7 @@
 <!-- SLEEK FLOATING AI AGENT COPILOT CHAT DRAWER             -->
 <!-- ======================================================== -->
 <div class="ai-copilot-pill" *ngIf="!isAiChatOpen" (click)="toggleAiChat()">
-  <i class="bi bi-robot" style="font-size: 0.85rem;"></i>
+  <img src="assets/logo-icon.png" alt="AI" style="width: 16px; height: 16px; object-fit: contain; background: white; border-radius: 4px; padding: 1px;">
   <span>AI Copilot</span>
   <span class="badge bg-white text-primary rounded-pill" style="font-size: 0.6rem; padding: 1px 5px;">Active</span>
 </div>
@@ -119,11 +118,11 @@
   <!-- Header -->
   <div class="ai-chat-header">
     <div class="d-flex align-items-center gap-2">
-      <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.75rem;">
-        <i class="bi bi-robot"></i>
+      <div class="rounded-circle bg-white d-flex align-items-center justify-content-center p-1" style="width: 26px; height: 26px;">
+        <img src="assets/logo-icon.png" alt="LoomLead" style="width: 18px; height: 18px; object-fit: contain;">
       </div>
       <div>
-        <div class="fw-bold" style="font-size: 0.78rem;">LoomLead AI Copilot</div>
+        <div class="fw-bold" style="font-size: 0.78rem;">loom<span style="color: #ffedd5;">Lead</span> AI Copilot</div>
         <div style="font-size: 0.65rem; opacity: 0.9;">Ready for commands & navigation</div>
       </div>
     </div>
