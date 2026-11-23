@@ -6,22 +6,27 @@
   <aside class="crm-sidebar d-flex flex-column flex-shrink-0 shadow-sm" [class.show]="isSidebarOpen">
     <!-- Brand Logo & Mobile Close Button Header -->
     <div class="d-flex align-items-center justify-content-between mb-2 px-2 pt-1">
-      <a routerLink="/dashboard" (click)="onNavLinkClick()" class="d-flex align-items-center gap-2 text-white text-decoration-none">
+      <a routerLink="/dashboard" (click)="onNavLinkClick()"
+        class="d-flex align-items-center gap-2 text-white text-decoration-none">
         <img src="assets/logo-icon.png" alt="LoomLead" style="width: 26px; height: 26px; object-fit: contain;">
         <div class="d-flex align-items-baseline gap-1">
-          <span class="fw-bold tracking-tight text-white" style="font-size: 1.05rem; letter-spacing: -0.02em;">loom<span style="color: #f97316;">Lead</span></span>
+          <span class="fw-bold tracking-tight text-white" style="font-size: 1.05rem; letter-spacing: -0.02em;">loom<span
+              style="color: #f97316;">Lead</span></span>
           <span class="badge bg-primary" style="font-size: 0.58rem; padding: 1px 4px;">SAAS</span>
         </div>
       </a>
       <!-- Explicit Close Button on Mobile Sidebar -->
-      <button type="button" class="btn btn-sm btn-link text-white-50 p-1 d-lg-none" (click)="closeSidebar()" title="Close Navigation Menu">
+      <button type="button" class="btn btn-sm btn-link text-white-50 p-1 d-lg-none" (click)="closeSidebar()"
+        title="Close Navigation Menu">
         <i class="bi bi-x-lg fs-5 text-white"></i>
       </button>
     </div>
 
     <!-- Industry Context Pill -->
     <div class="px-2 mb-2">
-      <div class="bg-dark p-1 px-2 rounded text-slate-400 d-flex align-items-center justify-content-between border border-secondary border-opacity-25" style="font-size: 0.72rem;">
+      <div
+        class="bg-dark p-1 px-2 rounded text-slate-400 d-flex align-items-center justify-content-between border border-secondary border-opacity-25"
+        style="font-size: 0.72rem;">
         <span><i class="bi bi-buildings me-1 text-primary"></i> Real Estate</span>
         <span class="badge bg-primary-subtle text-primary" style="font-size: 0.6rem; padding: 1px 4px;">PRO</span>
       </div>
@@ -77,11 +82,13 @@
     <!-- Bottom User Profile Card -->
     <div class="border-top border-secondary border-opacity-25 pt-2 px-1">
       <div class="d-flex align-items-center gap-2">
-        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.75rem;">
+        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold"
+          style="width: 28px; height: 28px; font-size: 0.75rem;">
           VM
         </div>
         <div class="overflow-hidden">
-          <div class="text-white fw-semibold text-truncate" style="font-size: 0.75rem; line-height: 1.2;">Vikram Mehta</div>
+          <div class="text-white fw-semibold text-truncate" style="font-size: 0.75rem; line-height: 1.2;">Vikram Mehta
+          </div>
           <div class="text-muted text-truncate" style="font-size: 0.65rem;">Apex Realty Group</div>
         </div>
       </div>
@@ -94,48 +101,52 @@
     <nav class="crm-navbar navbar navbar-expand">
       <div class="container-fluid p-0 d-flex align-items-center">
         <!-- Hamburger Menu Button (Visible on Mobile / Tablet) -->
-        <button class="btn btn-light btn-sm me-2 shadow-sm d-lg-none py-1 px-2 border" (click)="toggleSidebar()" title="Toggle Navigation Menu">
+        <button class="btn btn-light btn-sm me-2 shadow-sm d-lg-none py-1 px-2 border" (click)="toggleSidebar()"
+          title="Toggle Navigation Menu">
           <i class="bi bi-list fs-5"></i>
         </button>
 
         <!-- Mobile Brand Icon & Logo (Visible only on smaller screens) -->
         <a routerLink="/dashboard" class="d-flex align-items-center gap-1 text-decoration-none me-2 d-lg-none">
           <img src="assets/logo-icon.png" alt="LoomLead" style="width: 22px; height: 22px; object-fit: contain;">
-          <span class="fw-bold text-dark" style="font-size: 0.95rem;">loom<span style="color: #f97316;">Lead</span></span>
+          <span class="fw-bold text-dark" style="font-size: 0.95rem;">loom<span
+              style="color: #f97316;">Lead</span></span>
         </a>
 
         <!-- Global Search Bar with direct Google Maps Leads Finder -->
         <div class="input-group d-none d-sm-flex" style="max-width: 320px;">
-          <span class="input-group-text bg-light border-0 py-1"><i class="bi bi-search text-muted" style="font-size: 0.75rem;"></i></span>
-          <input 
-            type="text" 
-            class="form-control bg-light border-0" 
-            style="height: 29px; font-size: 0.75rem;" 
-            placeholder="Search Google Maps leads, niche, city..."
-            [(ngModel)]="globalSearchText"
+          <span class="input-group-text bg-light border-0 py-1"><i class="bi bi-search text-muted"
+              style="font-size: 0.75rem;"></i></span>
+          <input type="text" class="form-control bg-light border-0" style="height: 29px; font-size: 0.75rem;"
+            placeholder="Search Google Maps leads, niche, city..." [(ngModel)]="globalSearchText"
             (keyup.enter)="onGlobalSearch()">
-          <button class="btn btn-primary btn-sm py-0 px-2" type="button" (click)="onGlobalSearch()" title="Find Leads on Google Maps">
+          <button class="btn btn-primary btn-sm py-0 px-2" type="button" (click)="onGlobalSearch()"
+            title="Find Leads on Google Maps">
             <i class="bi bi-radar" style="font-size: 0.72rem;"></i>
           </button>
         </div>
 
         <!-- Right Side Nav Utilities -->
-        <div class="d-flex align-items-center gap-2 ms-auto">
+        <div class="d-flex align-items-center gap-1 gap-sm-2 ms-auto">
           <!-- Active Plan Badge -->
           <span class="badge plan-badge-medium px-2 py-1 rounded-pill" style="font-size: 0.68rem;">
-            <i class="bi bi-star-fill text-warning me-1"></i> Medium Pro
+            <i class="bi bi-star-fill text-warning me-1"></i> <span class="d-none d-xs-inline">Medium Pro</span><span class="d-inline d-xs-none">Pro</span>
           </span>
 
           <!-- Notification Bell -->
-          <button class="btn btn-light rounded-circle p-1 position-relative shadow-sm" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">
+          <button class="btn btn-light rounded-circle p-1 position-relative shadow-sm"
+            style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;"
+            title="Notifications">
             <i class="bi bi-bell-fill text-secondary" style="font-size: 0.75rem;"></i>
-            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+            <span
+              class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
           </button>
 
           <!-- Quick AI Assistant Button in Navbar -->
-          <button class="btn btn-outline-primary btn-sm rounded-pill shadow-sm d-inline-flex align-items-center gap-1" (click)="toggleAiChat()" style="font-size: 0.72rem; padding: 2px 8px; height: 26px;">
-            <img src="assets/logo-icon.png" alt="AI" style="width: 14px; height: 14px; object-fit: contain;">
-            <span>AI Copilot</span>
+          <button class="btn btn-gradient-primary btn-sm rounded-pill shadow-sm d-inline-flex align-items-center gap-1"
+            (click)="toggleAiChat()" style="font-size: 0.72rem; padding: 2px 8px; height: 26px;" title="AI Copilot Assistant">
+            <img src="assets/logo-icon.png" alt="AI" style="width: 14px; height: 14px; object-fit: contain; background: white; border-radius: 3px; padding: 1px;">
+            <span class="d-none d-sm-inline">AI Copilot</span>
           </button>
         </div>
       </div>
@@ -152,7 +163,8 @@
 <!-- SLEEK FLOATING AI AGENT COPILOT CHAT DRAWER             -->
 <!-- ======================================================== -->
 <div class="ai-copilot-pill" *ngIf="!isAiChatOpen" (click)="toggleAiChat()">
-  <img src="assets/logo-icon.png" alt="AI" style="width: 16px; height: 16px; object-fit: contain; background: white; border-radius: 4px; padding: 1px;">
+  <img src="assets/logo-icon.png" alt="AI"
+    style="width: 16px; height: 16px; object-fit: contain; background: white; border-radius: 4px; padding: 1px;">
   <span>AI Copilot</span>
   <span class="badge bg-white text-primary rounded-pill" style="font-size: 0.6rem; padding: 1px 5px;">Active</span>
 </div>
@@ -162,7 +174,8 @@
   <!-- Header -->
   <div class="ai-chat-header">
     <div class="d-flex align-items-center gap-2">
-      <div class="rounded-circle bg-white d-flex align-items-center justify-content-center p-1" style="width: 26px; height: 26px;">
+      <div class="rounded-circle bg-white d-flex align-items-center justify-content-center p-1"
+        style="width: 26px; height: 26px;">
         <img src="assets/logo-icon.png" alt="LoomLead" style="width: 18px; height: 18px; object-fit: contain;">
       </div>
       <div>
@@ -178,7 +191,8 @@
   <!-- Chat History -->
   <div class="ai-chat-body">
     <div *ngFor="let msg of chatMessages">
-      <div class="ai-bubble" [class.ai-bubble-agent]="msg.sender === 'agent'" [class.ai-bubble-user]="msg.sender === 'user'">
+      <div class="ai-bubble" [class.ai-bubble-agent]="msg.sender === 'agent'"
+        [class.ai-bubble-user]="msg.sender === 'user'">
         {{ msg.text }}
         <div class="text-end" style="font-size: 0.62rem; opacity: 0.6; margin-top: 3px;">{{ msg.timestamp }}</div>
       </div>
@@ -195,19 +209,15 @@
   <!-- Chat Input Footer -->
   <div class="p-2 bg-white border-top">
     <div class="input-group">
-      <input 
-        type="text" 
-        class="form-control" 
-        style="height: 29px; font-size: 0.75rem;" 
-        placeholder="Type command e.g. Hot leads dikhao..." 
-        [(ngModel)]="aiPromptInput" 
-        (keyup.enter)="sendAiPrompt()">
+      <input type="text" class="form-control" style="height: 29px; font-size: 0.75rem;"
+        placeholder="Type command e.g. Hot leads dikhao..." [(ngModel)]="aiPromptInput" (keyup.enter)="sendAiPrompt()">
       <button class="btn btn-primary btn-sm px-2" (click)="sendAiPrompt()" [disabled]="!aiPromptInput">
         <i class="bi bi-send-fill" style="font-size: 0.72rem;"></i>
       </button>
     </div>
     <div class="text-center mt-1">
-      <small class="text-muted" style="font-size: 0.65rem;">Press Enter to execute • English & Hinglish supported</small>
+      <small class="text-muted" style="font-size: 0.65rem;">Press Enter to execute • English & Hinglish
+        supported</small>
     </div>
   </div>
 </div>

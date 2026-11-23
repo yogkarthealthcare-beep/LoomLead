@@ -22,14 +22,14 @@ export class GoogleMapsLeadsComponent implements OnInit {
   importSuccessMessage: string = '';
 
   trendingKeywords = [
-    { label: 'Coaching Institutes', city: 'Kanpur' },
-    { label: 'Top Hospitals', city: 'Kanpur' },
-    { label: 'Real Estate Agents', city: 'Mumbai' },
-    { label: 'Dental Clinics', city: 'Delhi' },
-    { label: 'Gyms & Fitness', city: 'Bangalore' },
-    { label: 'Interior Designers', city: 'Pune' },
-    { label: 'Chartered Accountants', city: 'Hyderabad' },
-    { label: 'Digital Marketing Agencies', city: 'Ahmedabad' }
+    { label: 'Coaching Institutes', city: 'Kanpur', icon: 'bi-mortarboard-fill', emoji: '🎓', color: '#6366f1' },
+    { label: 'Top Hospitals', city: 'Kanpur', icon: 'bi-hospital-fill', emoji: '🏥', color: '#ef4444' },
+    { label: 'Real Estate Agents', city: 'Mumbai', icon: 'bi-buildings-fill', emoji: '🏢', color: '#3b82f6' },
+    { label: 'Dental Clinics', city: 'Delhi', icon: 'bi-heart-pulse-fill', emoji: '🦷', color: '#06b6d4' },
+    { label: 'Gyms & Fitness', city: 'Bangalore', icon: 'bi-lightning-charge-fill', emoji: '🏋️', color: '#f59e0b' },
+    { label: 'Interior Designers', city: 'Pune', icon: 'bi-palette-fill', emoji: '🎨', color: '#ec4899' },
+    { label: 'Chartered Accountants', city: 'Hyderabad', icon: 'bi-briefcase-fill', emoji: '💼', color: '#10b981' },
+    { label: 'Digital Marketing Agencies', city: 'Ahmedabad', icon: 'bi-laptop-fill', emoji: '💻', color: '#8b5cf6' }
   ];
 
   constructor(
