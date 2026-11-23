@@ -15,6 +15,7 @@ const superAdminRoutes = require('./routes/superAdminRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const suppressionRoutes = require('./routes/suppressionRoutes');
 const sequenceRoutes = require('./routes/sequenceRoutes');
+const scoringRoutes = require('./routes/scoringRoutes');
 const sequenceWorker = require('./services/sequenceWorker');
 const { getDashboardStats } = require('./controllers/dashboardController');
 
@@ -75,6 +76,9 @@ app.use('/api/v1/webhooks', suppressionRoutes); // Convenience alias for webhook
 
 // Sequence (Drip) Outreach Engine
 app.use('/api/v1/sequences', sequenceRoutes);
+
+// Rule-Based Lead Scoring & Engagement Engine
+app.use('/api/v1/scoring', scoringRoutes);
 
 // Import & Export (PDF, Excel, Word, CSV)
 app.use('/api/v1/import-export', importExportRoutes);

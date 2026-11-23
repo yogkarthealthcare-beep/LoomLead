@@ -6,6 +6,17 @@
       <span class="text-muted" style="font-size: 0.72rem;">Total {{ filteredLeads.length }} leads active in your database.</span>
     </div>
     <div class="d-flex align-items-center gap-1">
+      <button class="btn btn-outline-warning text-dark btn-sm shadow-sm" (click)="openScoringSettings()" style="font-size: 0.75rem;">
+        <i class="bi bi-sliders me-1 text-warning"></i> Scoring Rules
+      </button>
+      <div class="btn-group btn-group-sm shadow-sm">
+        <button class="btn btn-sm" [class.btn-primary]="viewMode === 'table'" [class.btn-outline-secondary]="viewMode !== 'table'" (click)="viewMode = 'table'" title="Table View">
+          <i class="bi bi-table"></i>
+        </button>
+        <button class="btn btn-sm" [class.btn-primary]="viewMode === 'kanban'" [class.btn-outline-secondary]="viewMode !== 'kanban'" (click)="viewMode = 'kanban'" title="Kanban Pipeline View">
+          <i class="bi bi-kanban-fill"></i>
+        </button>
+      </div>
       <a routerLink="/google-maps-leads" class="btn btn-primary btn-sm shadow-sm" style="font-size: 0.75rem;">
         <i class="bi bi-geo-alt-fill text-danger me-1"></i> Google Maps Finder
       </a>
@@ -33,6 +44,13 @@
     <i class="bi bi-slash-circle-fill fs-6"></i>
     <div class="fw-semibold">{{ dndWarningToast }}</div>
     <button type="button" class="btn-close py-2" (click)="dndWarningToast = ''"></button>
+  </div>
+
+  <!-- Scoring Notification Toast -->
+  <div *ngIf="scoringToast" class="alert alert-info alert-dismissible fade show shadow-sm border-0 d-flex align-items-center gap-2 py-2 px-3 mb-2" style="font-size: 0.78rem;">
+    <i class="bi bi-info-circle-fill"></i>
+    <div>{{ scoringToast }}</div>
+    <button type="button" class="btn-close py-2" (click)="scoringToast = ''"></button>
   </div>
 
   <!-- Compact Live Search & Filter Bar -->
@@ -75,7 +93,7 @@
         </div>
 
         <!-- Filter by Status -->
-        <div [class.col-md-2]="availableCategories.length > 0" [class.col-md-3]="availableCategories.length === 0">
+        <div [class.col-md-2]="availableCategories.length > 0" [class.col-md-2]="availableCategories.length === 0">
           <select class="form-select form-select-sm" style="height: 30px; font-size: 0.76rem;" [(ngModel)]="selectedStatus" (change)="applyFilters()">
             <option value="All">All Stages / Statuses</option>
             <option value="New">New Inquiries</option>
@@ -87,10 +105,21 @@
           </select>
         </div>
 
+        <!-- Sort By -->
+        <div [class.col-md-2]="availableCategories.length > 0" [class.col-md-2]="availableCategories.length === 0">
+          <select class="form-select form-select-sm" style="height: 30px; font-size: 0.76rem;" [(ngModel)]="sortBy" (change)="applyFilters()">
+            <option value="score_desc">🔥 Score (High to Low)</option>
+            <option value="score_asc">❄️ Score (Low to High)</option>
+            <option value="newest">⏰ Newest First</option>
+            <option value="deal_desc">💰 Deal Value</option>
+            <option value="name">🔤 Name (A-Z)</option>
+          </select>
+        </div>
+
         <!-- Reset Button -->
-        <div class="col-md-2">
-          <button class="btn btn-outline-secondary btn-sm w-100" style="height: 30px; font-size: 0.75rem;" (click)="resetFilters()">
-            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filters
+        <div class="col-md-1">
+          <button class="btn btn-outline-secondary btn-sm w-100" style="height: 30px; font-size: 0.75rem;" (click)="resetFilters()" title="Reset Filters">
+            <i class="bi bi-arrow-counterclockwise"></i>
           </button>
         </div>
       </div>
@@ -111,8 +140,8 @@
     </div>
   </div>
 
-  <!-- Compact Leads Table Card -->
-  <div class="card border-0 shadow-sm">
+  <!-- Table View Container -->
+  <div *ngIf="viewMode === 'table'" class="card border-0 shadow-sm">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0 table-sm">
         <thead class="table-light">
@@ -155,9 +184,20 @@
             </td>
             <td>
               <div class="text-secondary fw-semibold" style="font-size: 0.76rem;">{{ lead.company_name }}</div>
-              <span *ngIf="lead.category" class="badge bg-primary-subtle text-primary border border-primary-subtle badge-tag" style="font-size: 0.65rem;">
-                <i class="bi bi-tag-fill me-1"></i> {{ lead.category }}
-              </span>
+              <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                <span *ngIf="lead.category" class="badge bg-primary-subtle text-primary border border-primary-subtle badge-tag" style="font-size: 0.62rem;">
+                  <i class="bi bi-tag-fill me-1"></i> {{ lead.category }}
+                </span>
+                <span *ngIf="lead.google_rating && lead.google_rating > 0" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle badge-tag" style="font-size: 0.62rem;">
+                  ⭐ {{ lead.google_rating }} ({{ lead.review_count || 0 }})
+                </span>
+                <span *ngIf="!lead.website" class="badge bg-danger-subtle text-danger border border-danger-subtle badge-tag" style="font-size: 0.62rem;" title="No Website - Prime Web Agency Prospect">
+                  <i class="bi bi-globe2 me-1"></i> No Website
+                </span>
+                <span *ngIf="lead.website" class="badge bg-light text-secondary border badge-tag" style="font-size: 0.62rem;">
+                  <i class="bi bi-link-45deg me-1"></i> Website
+                </span>
+              </div>
             </td>
             <td>
               <span class="badge bg-light text-dark border badge-tag">
@@ -166,13 +206,17 @@
               </span>
             </td>
             <td>
-              <span class="badge badge-tag" 
-                    [class.bg-danger]="lead.score === 'Hot'" 
-                    [class.bg-warning]="lead.score === 'Warm'" 
-                    [class.text-dark]="lead.score === 'Warm'" 
-                    [class.bg-secondary]="lead.score === 'Cold'">
-                {{ lead.score }}
-              </span>
+              <button type="button" class="btn btn-sm p-0 border-0" (click)="openScoreBreakdown(lead)" title="Click to view Score Breakdown factors">
+                <span class="badge badge-tag" 
+                      [class.bg-danger]="lead.score === 'Hot'" 
+                      [class.bg-warning]="lead.score === 'Warm'" 
+                      [class.text-dark]="lead.score === 'Warm'" 
+                      [class.bg-secondary]="lead.score === 'Cold'">
+                  <i class="bi" [class.bi-fire]="lead.score === 'Hot'" [class.bi-brightness-high-fill]="lead.score === 'Warm'" [class.bi-snow]="lead.score === 'Cold'"></i>
+                  {{ lead.score }} ({{ lead.score_value !== undefined ? lead.score_value : 50 }})
+                  <i class="bi bi-info-circle ms-1 opacity-75" style="font-size: 0.62rem;"></i>
+                </span>
+              </button>
             </td>
             <td>
               <span class="badge badge-tag"
@@ -241,6 +285,97 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Kanban Pipeline View -->
+  <div *ngIf="viewMode === 'kanban'" class="kanban-board-container overflow-auto pb-4">
+    <div class="d-flex gap-3 align-items-start" style="min-width: 1100px;">
+      <div *ngFor="let stage of kanbanStages" class="kanban-column flex-fill bg-light rounded p-2 shadow-sm border" style="min-width: 220px; max-width: 280px;">
+        <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+          <span class="fw-bold text-dark text-uppercase" style="font-size: 0.76rem; letter-spacing: 0.5px;">
+            <i class="bi bi-circle-fill me-1" 
+               [class.text-primary]="stage === 'New'"
+               [class.text-info]="stage === 'Contacted'"
+               [class.text-warning]="stage === 'Qualified'"
+               [class.text-success]="stage === 'Won'"
+               [class.text-danger]="stage === 'Lost'"
+               style="font-size: 0.55rem;"></i>
+            {{ stage }}
+          </span>
+          <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2" style="font-size: 0.68rem;">
+            {{ getLeadsForStage(stage).length }}
+          </span>
+        </div>
+
+        <!-- Cards List -->
+        <div class="d-flex flex-column gap-2" style="min-height: 200px;">
+          <div *ngFor="let lead of getLeadsForStage(stage)" class="card border-0 shadow-sm p-2 bg-white" style="border-radius: 8px;">
+            <!-- Top line: Name & Score badge -->
+            <div class="d-flex align-items-start justify-content-between gap-1 mb-1">
+              <div>
+                <div class="fw-semibold text-dark text-truncate" style="font-size: 0.8rem; line-height: 1.2; max-width: 140px;" [title]="lead.name">{{ lead.name }}</div>
+                <div class="text-secondary small text-truncate" style="font-size: 0.72rem; max-width: 140px;" [title]="lead.company_name">{{ lead.company_name }}</div>
+              </div>
+              <button type="button" class="btn btn-sm p-0 border-0" (click)="openScoreBreakdown(lead)" title="View Score Breakdown">
+                <span class="badge" 
+                      [class.bg-danger]="lead.score === 'Hot'" 
+                      [class.bg-warning]="lead.score === 'Warm'" 
+                      [class.text-dark]="lead.score === 'Warm'" 
+                      [class.bg-secondary]="lead.score === 'Cold'"
+                      style="font-size: 0.65rem;">
+                  <i class="bi" [class.bi-fire]="lead.score === 'Hot'" [class.bi-brightness-high-fill]="lead.score === 'Warm'" [class.bi-snow]="lead.score === 'Cold'"></i>
+                  {{ lead.score }} ({{ lead.score_value !== undefined ? lead.score_value : 50 }})
+                </span>
+              </button>
+            </div>
+
+            <!-- Tags: Phone, DND, Rating, No Website -->
+            <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
+              <span class="text-muted font-monospace" style="font-size: 0.7rem;">
+                <i class="bi bi-telephone me-1"></i>{{ lead.phone }}
+              </span>
+              <span *ngIf="lead.is_dnd" class="badge bg-danger text-white px-1 py-0" style="font-size: 0.6rem;">
+                <i class="bi bi-slash-circle me-1"></i>DND
+              </span>
+              <span *ngIf="lead.google_rating && lead.google_rating > 0" class="badge bg-warning-subtle text-warning-emphasis px-1 py-0" style="font-size: 0.62rem;">
+                ⭐ {{ lead.google_rating }}
+              </span>
+              <span *ngIf="!lead.website" class="badge bg-danger-subtle text-danger px-1 py-0" style="font-size: 0.62rem;" title="No Website - High Pitch Potential">
+                No Website
+              </span>
+              <span *ngIf="lead.category" class="badge bg-light text-secondary border px-1 py-0" style="font-size: 0.62rem;">
+                {{ lead.category }}
+              </span>
+            </div>
+
+            <!-- Footer: Budget Value & Quick Actions -->
+            <div class="d-flex align-items-center justify-content-between pt-1 border-top" style="font-size: 0.72rem;">
+              <span class="fw-semibold text-dark">₹{{ lead.budget_value | number }}</span>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary btn-action-icon py-0 px-1" [class.opacity-50]="lead.is_dnd" (click)="openCallModal(lead)" [title]="lead.is_dnd ? 'DND Suppressed' : 'Log Call'">
+                  <i class="bi bi-telephone-fill" [class.text-danger]="lead.is_dnd" style="font-size: 0.68rem;"></i>
+                </button>
+                <ng-container *ngIf="!lead.is_dnd; else dndWaKanban">
+                  <a [href]="'https://wa.me/' + lead.phone.replace(' ', '')" target="_blank" class="btn btn-outline-success btn-action-icon py-0 px-1" title="WhatsApp Chat">
+                    <i class="bi bi-whatsapp" style="font-size: 0.68rem;"></i>
+                  </a>
+                </ng-container>
+                <ng-template #dndWaKanban>
+                  <button class="btn btn-outline-secondary btn-action-icon py-0 px-1 opacity-50" (click)="alertDnd(lead)">
+                    <i class="bi bi-slash-circle text-danger" style="font-size: 0.68rem;"></i>
+                  </button>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty Column placeholder -->
+          <div *ngIf="getLeadsForStage(stage).length === 0" class="text-center py-4 text-muted small opacity-50">
+            No leads in {{ stage }}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -359,6 +494,245 @@
         <a routerLink="/pricing" class="btn btn-primary btn-sm px-3 fw-semibold" (click)="showUpgradeModal = false">
           View Plans <i class="bi bi-arrow-right ms-1"></i>
         </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- SCORE BREAKDOWN MODAL ("WHY THIS SCORE?")  -->
+<!-- ========================================== -->
+<div class="modal fade show d-block" *ngIf="showBreakdownModal" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered modal-md" style="max-width: 520px;">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-light">
+        <div>
+          <h6 class="modal-title fw-bold mb-0" style="font-size: 0.95rem;">
+            <i class="bi bi-speedometer2 text-primary me-1"></i> Lead Score Breakdown
+          </h6>
+          <span class="text-muted small" style="font-size: 0.72rem;">
+            {{ selectedLeadBreakdown?.lead_name }} &bull; {{ selectedLeadBreakdown?.company }}
+          </span>
+        </div>
+        <button type="button" class="btn-close py-1" (click)="showBreakdownModal = false"></button>
+      </div>
+
+      <div class="modal-body p-3">
+        <!-- Score Gauge & Bucket Summary -->
+        <div class="card border-0 bg-light p-3 mb-3 text-center rounded">
+          <div class="d-flex align-items-center justify-content-center gap-3">
+            <div class="d-flex flex-column align-items-center justify-content-center rounded-circle text-white shadow-sm"
+                 [class.bg-danger]="selectedLeadBreakdown?.breakdown?.bucket === 'Hot' || selectedLeadBreakdown?.bucket === 'Hot'"
+                 [class.bg-warning]="selectedLeadBreakdown?.breakdown?.bucket === 'Warm' || selectedLeadBreakdown?.bucket === 'Warm'"
+                 [class.text-dark]="selectedLeadBreakdown?.breakdown?.bucket === 'Warm' || selectedLeadBreakdown?.bucket === 'Warm'"
+                 [class.bg-secondary]="selectedLeadBreakdown?.breakdown?.bucket === 'Cold' || selectedLeadBreakdown?.bucket === 'Cold'"
+                 style="width: 72px; height: 72px;">
+              <span class="fw-bold" style="font-size: 1.5rem; line-height: 1;">
+                {{ selectedLeadBreakdown?.breakdown?.total_score !== undefined ? selectedLeadBreakdown.breakdown.total_score : selectedLeadBreakdown?.score_value }}
+              </span>
+              <span class="text-uppercase" style="font-size: 0.6rem; letter-spacing: 0.5px;">/ 100</span>
+            </div>
+            <div class="text-start">
+              <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 1.05rem;">
+                <span [class.text-danger]="(selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) === 'Hot'"
+                      [class.text-warning]="(selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) === 'Warm'"
+                      [class.text-secondary]="(selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) === 'Cold'">
+                  {{ (selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) }} Lead
+                </span>
+                <i class="bi" [class.bi-fire]="(selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) === 'Hot'" [class.bi-brightness-high-fill]="(selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) === 'Warm'" [class.bi-snow]="(selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) === 'Cold'"></i>
+              </div>
+              <div class="text-muted" style="font-size: 0.74rem;">
+                Base Score: <strong>50 pts</strong> &bull; Net Rules Adjustment: 
+                <strong>{{ (selectedLeadBreakdown?.breakdown?.net_adjustment >= 0 ? '+' : '') + (selectedLeadBreakdown?.breakdown?.net_adjustment || 0) }} pts</strong>
+              </div>
+              <div class="progress mt-2" style="height: 6px; width: 180px;">
+                <div class="progress-bar"
+                     [class.bg-danger]="(selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) === 'Hot'"
+                     [class.bg-warning]="(selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) === 'Warm'"
+                     [class.bg-secondary]="(selectedLeadBreakdown?.breakdown?.bucket || selectedLeadBreakdown?.bucket) === 'Cold'"
+                     [style.width.%]="selectedLeadBreakdown?.breakdown?.total_score || selectedLeadBreakdown?.score_value || 50">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Itemized Factors Breakdown List -->
+        <h6 class="fw-bold mb-2" style="font-size: 0.8rem;">
+          <i class="bi bi-check2-circle text-primary me-1"></i> Rule Evaluation & Impact
+        </h6>
+        <div class="list-group list-group-flush border rounded overflow-hidden" style="max-height: 280px; overflow-y: auto;">
+          <div *ngFor="let factor of selectedLeadBreakdown?.breakdown?.factors" class="list-group-item d-flex align-items-center justify-content-between p-2" [class.bg-light]="!factor.matched">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi" 
+                 [class.bi-check-circle-fill]="factor.matched"
+                 [class.text-success]="factor.matched"
+                 [class.bi-dash-circle]="!factor.matched"
+                 [class.text-muted]="!factor.matched"
+                 style="font-size: 0.9rem;"></i>
+              <div>
+                <div class="fw-semibold text-dark" style="font-size: 0.78rem;">
+                  {{ factor.name }}
+                  <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size: 0.6rem;">{{ factor.category }}</span>
+                </div>
+                <div class="text-muted" style="font-size: 0.7rem;">{{ factor.description }}</div>
+              </div>
+            </div>
+            <div class="text-end">
+              <span class="badge" 
+                    [class.bg-success-subtle]="factor.matched && factor.points > 0"
+                    [class.text-success]="factor.matched && factor.points > 0"
+                    [class.bg-light]="!factor.matched"
+                    [class.text-muted]="!factor.matched"
+                    style="font-size: 0.75rem;">
+                {{ factor.matched ? '+' + factor.points : '0' }} / {{ factor.max_points }} pts
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer py-2 px-3">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="showBreakdownModal = false">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- SCORING RULES CONFIGURATION MODAL          -->
+<!-- ========================================== -->
+<div class="modal fade show d-block" *ngIf="showScoringSettingsModal" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 680px;">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-light">
+        <div>
+          <h6 class="modal-title fw-bold mb-0" style="font-size: 0.95rem;">
+            <i class="bi bi-sliders text-warning me-1"></i> Lead Scoring Rules & Weights Configuration
+          </h6>
+          <span class="text-muted small" style="font-size: 0.72rem;">
+            Customize weights for your business use case (e.g. Web Agency target rules). Range 0–100.
+          </span>
+        </div>
+        <button type="button" class="btn-close py-1" (click)="showScoringSettingsModal = false"></button>
+      </div>
+
+      <div class="modal-body p-3" *ngIf="scoringConfig && scoringConfig.weights">
+        <!-- Preset / Web Agency Notice -->
+        <div class="alert alert-warning-subtle border border-warning-subtle py-2 px-3 mb-3 d-flex align-items-center gap-2" style="font-size: 0.75rem;">
+          <i class="bi bi-lightbulb-fill text-warning fs-6"></i>
+          <div>
+            <strong>Web Agency Rule Active:</strong> Leads with <em>no website</em>, high Google rating (≥4.0), and active reviews (≥20) earn compounding high scores (🔥 Hot).
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <!-- Thresholds -->
+          <div class="col-12">
+            <h6 class="fw-bold text-dark border-bottom pb-1 mb-2" style="font-size: 0.78rem;">BUCKET THRESHOLDS</h6>
+            <div class="row g-2">
+              <div class="col-md-6" *ngIf="scoringConfig.thresholds">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">🔥 Hot Lead Threshold (Points)</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white py-0">≥</span>
+                  <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.thresholds.hot" min="1" max="100">
+                </div>
+              </div>
+              <div class="col-md-6" *ngIf="scoringConfig.thresholds">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">☀️ Warm Lead Threshold (Points)</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white py-0">≥</span>
+                  <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.thresholds.warm" min="1" max="100">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Web & Data Weights -->
+          <div class="col-12">
+            <h6 class="fw-bold text-dark border-bottom pb-1 mb-2" style="font-size: 0.78rem;">ONLINE PRESENCE & PROFILE DATA WEIGHTS</h6>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">No Website Bonus (Web Agency Pitch)</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.no_website">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Has Existing Website</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.has_website">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Category / Industry Match</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.category_match">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Rating ≥ 4.0</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.rating_min_4">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Rating ≥ 4.5 Extra</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.rating_min_4_5">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Reviews ≥ 20</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.reviews_min_20">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Reviews ≥ 50 Extra</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.reviews_min_50">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Valid Phone Number</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.has_phone">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Valid Email Address</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.has_email">
+              </div>
+            </div>
+          </div>
+
+          <!-- Engagement Events & Recency Weights -->
+          <div class="col-12">
+            <h6 class="fw-bold text-dark border-bottom pb-1 mb-2" style="font-size: 0.78rem;">ENGAGEMENT & RECENCY WEIGHTS</h6>
+            <div class="row g-2">
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">WhatsApp Reply</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.whatsapp_reply">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Email Open</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.email_open">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Email Link Click</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.email_click">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Seen in Last 7 Days</label>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="scoringConfig.weights.recency_days_7">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer py-2 px-3 d-flex justify-content-between align-items-center">
+        <div>
+          <button type="button" class="btn btn-outline-danger btn-sm me-2" (click)="resetScoringConfig()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset to Defaults
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="isRecalculatingScores" (click)="triggerRecalculateScores()">
+            <span *ngIf="isRecalculatingScores" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!isRecalculatingScores" class="bi bi-arrow-repeat me-1"></i>
+            {{ isRecalculatingScores ? 'Recalculating...' : 'Recalculate All Leads' }}
+          </button>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="showScoringSettingsModal = false">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" (click)="saveScoringConfig()">
+            <i class="bi bi-save me-1"></i> Save Rules
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -451,13 +451,20 @@ class SequenceService {
       [enrollmentIds]
     );
 
-    // 4. Move lead stage to 'Contacted' in CRM pipeline
+    // 4. Move lead stage to 'Contacted' in CRM pipeline and record engagement
+    const engagementCol = channel === 'whatsapp' ? 'whatsapp_replies' : 'email_opens';
     await db.query(
       `UPDATE leads 
-       SET status = 'Contacted', updated_at = CURRENT_TIMESTAMP 
+       SET status = 'Contacted',
+           ${engagementCol} = COALESCE(${engagementCol}, 0) + 1,
+           last_seen_at = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP 
        WHERE id = $1`,
       [lead.id]
     );
+
+    const scoringQueue = require('./scoringQueue');
+    scoringQueue.enqueue(tenantId, lead.id);
 
     // 5. Log incoming reply
     await db.query(

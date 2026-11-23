@@ -342,6 +342,8 @@ class GoogleMapsService {
           email: item.website ? `contact@${hygieneService.normalizeDomain(item.website)}` : null,
           company_name: item.name,
           website: item.website,
+          google_rating: item.rating || 0.0,
+          review_count: item.user_ratings_total || 0,
           category: item.category || 'Business & Commercial',
           address: item.address,
           city: item.city || 'Default City',

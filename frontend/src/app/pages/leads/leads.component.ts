@@ -19,6 +19,17 @@ export class LeadsComponent implements OnInit {
   selectedStatus: string = 'All';
   selectedCategory: string = 'All';
   selectedLeadIds: Set<string> = new Set();
+  viewMode: 'table' | 'kanban' = 'table';
+  sortBy: string = 'score_desc';
+  kanbanStages: string[] = ['New', 'Contacted', 'Qualified', 'Won', 'Lost'];
+
+  // Scoring Settings & Breakdown modal state
+  showScoringSettingsModal: boolean = false;
+  showBreakdownModal: boolean = false;
+  selectedLeadBreakdown: any = null;
+  scoringConfig: any = null;
+  isRecalculatingScores: boolean = false;
+  scoringToast: string = '';
 
   // New Lead Modal state
   showAddModal: boolean = false;
@@ -85,6 +96,71 @@ export class LeadsComponent implements OnInit {
       const matchStatus = this.selectedStatus === 'All' || l.status === this.selectedStatus;
 
       return matchSearch && matchCategory && matchScore && matchStatus;
+    });
+
+    // Apply sorting
+    this.filteredLeads.sort((a, b) => {
+      if (this.sortBy === 'score_desc') return (b.score_value || 50) - (a.score_value || 50);
+      if (this.sortBy === 'score_asc') return (a.score_value || 50) - (b.score_value || 50);
+      if (this.sortBy === 'deal_desc') return (b.budget_value || 0) - (a.budget_value || 0);
+      if (this.sortBy === 'name') return a.name.localeCompare(b.name);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }
+
+  getLeadsForStage(stage: string): Lead[] {
+    return this.filteredLeads.filter(l => l.status === stage);
+  }
+
+  // Scoring Settings Actions
+  openScoringSettings(): void {
+    this.crmService.getScoringConfig().subscribe(cfg => {
+      this.scoringConfig = cfg || {};
+      this.showScoringSettingsModal = true;
+    });
+  }
+
+  saveScoringConfig(): void {
+    if (!this.scoringConfig) return;
+    this.crmService.updateScoringConfig(this.scoringConfig).subscribe(() => {
+      this.showScoringSettingsModal = false;
+      this.scoringToast = 'Lead scoring weights updated successfully.';
+      setTimeout(() => this.scoringToast = '', 4000);
+      this.loadLeads();
+    });
+  }
+
+  resetScoringConfig(): void {
+    if (confirm('Reset scoring configuration back to system defaults?')) {
+      this.crmService.resetScoringConfig().subscribe(cfg => {
+        this.scoringConfig = cfg;
+        this.scoringToast = 'Scoring configuration reset to default rules.';
+        setTimeout(() => this.scoringToast = '', 4000);
+      });
+    }
+  }
+
+  triggerRecalculateScores(): void {
+    this.isRecalculatingScores = true;
+    this.crmService.recalculateLeadScores().subscribe({
+      next: (res) => {
+        this.isRecalculatingScores = false;
+        this.scoringToast = `Enqueued ${res.total_queued || 0} leads for score recalculation. Updating...`;
+        setTimeout(() => {
+          this.loadLeads();
+          this.scoringToast = '';
+        }, 1500);
+      },
+      error: () => {
+        this.isRecalculatingScores = false;
+      }
+    });
+  }
+
+  openScoreBreakdown(lead: Lead): void {
+    this.crmService.getLeadScoreBreakdown(lead.id).subscribe(data => {
+      this.selectedLeadBreakdown = data;
+      this.showBreakdownModal = true;
     });
   }
 

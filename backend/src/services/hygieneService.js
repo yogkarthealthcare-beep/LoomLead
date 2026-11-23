@@ -4,6 +4,7 @@
  * 2. Normalize Domain (lowercase, strip protocol, www, paths)
  * 3. Smart Deduplicating Upsert & Merge
  */
+const db = require('../config/db');
 
 class HygieneService {
   /**
@@ -98,7 +99,24 @@ class HygieneService {
    * If duplicate exists: merges/enriches empty fields, appends source, updates last_seen_at.
    * If new: inserts fresh lead.
    */
-  async upsertLead(client, tenantId, leadData, defaultStageId, assignedUserId) {
+  async upsertLead(clientOrTenantId, tenantIdOrData, leadDataOrStage, defaultStageId, assignedUserId) {
+    let client = db;
+    let tenantId;
+    let leadData;
+    let stageId = defaultStageId;
+    let userId = assignedUserId;
+
+    if (typeof clientOrTenantId === 'string') {
+      client = db;
+      tenantId = clientOrTenantId;
+      leadData = tenantIdOrData || {};
+      stageId = leadDataOrStage;
+    } else {
+      client = clientOrTenantId || db;
+      tenantId = tenantIdOrData;
+      leadData = leadDataOrStage || {};
+    }
+
     const rawPhone = leadData.phone || '';
     const normPhone = this.normalizePhone(rawPhone);
 
@@ -140,6 +158,9 @@ class HygieneService {
       const mergedCity = (existing.city && existing.city !== 'India') ? existing.city : (leadData.city || existing.city || 'India');
       const mergedBudgetValue = (parseFloat(existing.budget_value) > 0) ? existing.budget_value : (leadData.budget_value || 0);
       const mergedNotes = existing.notes ? (leadData.notes && !existing.notes.includes(leadData.notes) ? `${existing.notes} | ${leadData.notes}` : existing.notes) : leadData.notes;
+      const mergedWebsite = existing.website || leadData.website || null;
+      const mergedRating = parseFloat(leadData.google_rating) > 0 ? leadData.google_rating : (existing.google_rating || 0.0);
+      const mergedReviews = parseInt(leadData.review_count, 10) > 0 ? leadData.review_count : (existing.review_count || 0);
 
       // Update existing record
       const updateQuery = `
@@ -157,9 +178,12 @@ class HygieneService {
               SELECT array_agg(DISTINCT s) 
               FROM unnest(array_cat(COALESCE(sources, ARRAY[]::text[]), ARRAY[$10::text])) AS s
             ),
+            website = COALESCE(website, $11),
+            google_rating = GREATEST(COALESCE(google_rating, 0), $12),
+            review_count = GREATEST(COALESCE(review_count, 0), $13),
             last_seen_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = $11 AND tenant_id = $12
+        WHERE id = $14 AND tenant_id = $15
         RETURNING *
       `;
       const updateRes = await client.query(updateQuery, [
@@ -173,9 +197,15 @@ class HygieneService {
         normPhone,
         normDomain,
         source,
+        mergedWebsite,
+        mergedRating,
+        mergedReviews,
         existing.id,
         tenantId
       ]);
+
+      const scoringQueue = require('./scoringQueue');
+      scoringQueue.enqueue(tenantId, existing.id);
 
       return {
         lead: updateRes.rows[0],
@@ -190,8 +220,8 @@ class HygieneService {
       INSERT INTO leads 
       (tenant_id, name, phone, email, company_name, category, address, city, 
        source, status, score, stage_id, assigned_to_user_id, budget_value, notes, 
-       normalized_phone, normalized_domain, sources, last_seen_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, ARRAY[$18::text], CURRENT_TIMESTAMP)
+       normalized_phone, normalized_domain, sources, website, google_rating, review_count, last_seen_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, ARRAY[$18::text], $19, $20, $21, CURRENT_TIMESTAMP)
       RETURNING *
     `;
     const insertRes = await client.query(insertQuery, [
@@ -212,11 +242,18 @@ class HygieneService {
       leadData.notes || null,
       normPhone,
       normDomain,
-      source
+      source,
+      leadData.website || null,
+      leadData.google_rating || 0.0,
+      leadData.review_count || 0
     ]);
 
+    const createdLead = insertRes.rows[0];
+    const scoringQueue = require('./scoringQueue');
+    scoringQueue.enqueue(tenantId, createdLead.id);
+
     return {
-      lead: insertRes.rows[0],
+      lead: createdLead,
       isDuplicate: false,
       merged: false,
       action: 'created'

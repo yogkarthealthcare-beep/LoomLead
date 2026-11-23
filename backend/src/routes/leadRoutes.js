@@ -5,6 +5,7 @@ const { authenticateToken } = require('../middleware/authMiddleware');
 const { checkPlanLimit } = require('../middleware/planGatingMiddleware');
 const hygieneService = require('../services/hygieneService');
 const suppressionService = require('../services/suppressionService');
+const scoringQueue = require('../services/scoringQueue');
 
 // Get All Leads with Filters, Search, Sort & Pagination
 router.get('/', authenticateToken, async (req, res) => {
@@ -55,7 +56,7 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     // Sort order validation
-    const validSortCols = ['name', 'created_at', 'budget_value', 'next_followup_at', 'score', 'status', 'category'];
+    const validSortCols = ['name', 'created_at', 'budget_value', 'next_followup_at', 'score', 'score_value', 'google_rating', 'review_count', 'status', 'category'];
     const sortCol = validSortCols.includes(sort) ? `l.${sort}` : 'l.created_at';
     const sortDir = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
@@ -83,7 +84,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
 // Create New Lead Manually (with Deduplication & Normalization)
 router.post('/', authenticateToken, async (req, res) => {
-  const { name, phone, email, company_name, category, source, status, score, budget_value, notes, website } = req.body;
+  const { name, phone, email, company_name, category, source, status, score, budget_value, notes, website, google_rating, review_count } = req.body;
   if (!name || !phone) {
     return res.status(400).json({ success: false, message: 'Name and phone are required.' });
   }
@@ -100,10 +101,15 @@ router.post('/', authenticateToken, async (req, res) => {
       score: score || 'Warm',
       budget_value: budget_value || 0,
       notes: notes || null,
-      website: website || null
+      website: website || null,
+      google_rating: parseFloat(google_rating) || 0.0,
+      review_count: parseInt(review_count, 10) || 0
     };
 
     const result = await hygieneService.upsertLead(db, req.tenantId, leadData, null, req.user.id);
+
+    // Queue for asynchronous lead score evaluation
+    scoringQueue.enqueue(req.tenantId, result.lead.id);
 
     res.json({
       success: true,
@@ -193,6 +199,9 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (updateRes.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Lead not found.' });
     }
+
+    // Queue lead for asynchronous score recalculation on update
+    scoringQueue.enqueue(req.tenantId, id);
 
     res.json({ success: true, lead: updateRes.rows[0], message: 'Lead updated successfully.' });
   } catch (err) {

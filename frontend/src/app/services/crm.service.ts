@@ -14,6 +14,11 @@ export interface Lead {
   sources?: string[];
   status: string;
   score: 'Hot' | 'Warm' | 'Cold';
+  score_value?: number;
+  score_breakdown?: any;
+  website?: string;
+  google_rating?: number;
+  review_count?: number;
   budget_value: number;
   next_followup_at: string;
   created_at: string;
@@ -163,6 +168,11 @@ export class CrmService {
             source: l.source || 'Direct',
             status: l.status || 'New',
             score: l.score || 'Warm',
+            score_value: l.score_value !== undefined && l.score_value !== null ? parseInt(l.score_value, 10) : (l.score === 'Hot' ? 85 : (l.score === 'Cold' ? 25 : 55)),
+            score_breakdown: l.score_breakdown || null,
+            website: l.website || l.normalized_domain || '',
+            google_rating: parseFloat(l.google_rating) || 0,
+            review_count: parseInt(l.review_count, 10) || 0,
             budget_value: parseFloat(l.budget_value) || 0,
             next_followup_at: l.next_followup_at || 'Not scheduled',
             created_at: l.created_at ? l.created_at.split('T')[0] : '',
@@ -573,5 +583,41 @@ export class CrmService {
 
   triggerSequenceWorker(): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/sequences/worker/trigger`, {});
+  }
+
+  // =========================================================================
+  // RULE-BASED LEAD SCORING & ENGAGEMENT ENGINE
+  // =========================================================================
+
+  getScoringConfig(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/scoring/config`).pipe(
+      map(res => res.config)
+    );
+  }
+
+  updateScoringConfig(config: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/scoring/config`, config).pipe(
+      map(res => res.config)
+    );
+  }
+
+  resetScoringConfig(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/scoring/config/reset`, {}).pipe(
+      map(res => res.config)
+    );
+  }
+
+  recalculateLeadScores(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/scoring/recalculate`, {});
+  }
+
+  getLeadScoreBreakdown(leadId: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/scoring/leads/${leadId}/breakdown`).pipe(
+      map(res => res)
+    );
+  }
+
+  recordEngagement(leadId: string, type: 'whatsapp_reply' | 'email_open' | 'email_click'): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/scoring/events/engagement`, { lead_id: leadId, type });
   }
 }
