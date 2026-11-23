@@ -131,12 +131,13 @@ class HygieneService {
     if (dupRes.rows.length > 0) {
       const existing = dupRes.rows[0];
 
-      // Merge: Enrich only fields that are currently empty in existing lead
+      // Merge: Enrich only fields that are currently empty or placeholder in existing lead
       const mergedEmail = existing.email || leadData.email || null;
-      const mergedCompany = (existing.company_name && existing.company_name !== 'N/A') ? existing.company_name : (leadData.company_name || existing.company_name || 'N/A');
-      const mergedCategory = existing.category || leadData.category || 'Business & Commercial';
+      const isPlaceholderCompany = !existing.company_name || existing.company_name === 'N/A' || existing.company_name === existing.name;
+      const mergedCompany = isPlaceholderCompany && leadData.company_name ? leadData.company_name : (existing.company_name || leadData.company_name || 'N/A');
+      const mergedCategory = (existing.category && existing.category !== 'Business & Commercial') ? existing.category : (leadData.category || existing.category || 'Business & Commercial');
       const mergedAddress = existing.address || leadData.address || null;
-      const mergedCity = existing.city || leadData.city || null;
+      const mergedCity = (existing.city && existing.city !== 'India') ? existing.city : (leadData.city || existing.city || 'India');
       const mergedBudgetValue = (parseFloat(existing.budget_value) > 0) ? existing.budget_value : (leadData.budget_value || 0);
       const mergedNotes = existing.notes ? (leadData.notes && !existing.notes.includes(leadData.notes) ? `${existing.notes} | ${leadData.notes}` : existing.notes) : leadData.notes;
 

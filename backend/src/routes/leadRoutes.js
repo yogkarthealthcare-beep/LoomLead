@@ -108,6 +108,7 @@ router.post('/', authenticateToken, async (req, res) => {
     res.json({
       success: true,
       lead: result.lead,
+      action: result.action,
       isDuplicate: result.isDuplicate,
       merged: result.merged,
       message: result.merged ? 'Existing lead found: enriched with new details without duplication.' : 'Lead added successfully.'

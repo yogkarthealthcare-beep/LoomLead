@@ -146,7 +146,8 @@ router.post('/outbound/send', authenticateToken, async (req, res) => {
 });
 
 // 6. WhatsApp Incoming Webhook (Automatic STOP / UNSUBSCRIBE / BAND KARO processing)
-router.post('/webhooks/whatsapp', async (req, res) => {
+// Supports /webhooks/whatsapp and /whatsapp
+router.post(['/webhooks/whatsapp', '/whatsapp'], async (req, res) => {
   // Can be called by WhatsApp Business API / Twilio / Gupshup / Meta Cloud API
   const { from, body, message, tenant_id } = req.body;
   const senderPhone = from || req.body['From'] || req.body['wa_id'] || '';
