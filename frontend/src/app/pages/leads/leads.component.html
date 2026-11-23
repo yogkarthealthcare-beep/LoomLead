@@ -33,20 +33,28 @@
     <div class="card-body p-2">
       <div class="row g-2 align-items-center">
         <!-- Live Search -->
-        <div class="col-md-5">
+        <div [class.col-md-4]="availableCategories.length > 0" [class.col-md-5]="availableCategories.length === 0">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-white border-end-0 py-0"><i class="bi bi-search text-muted" style="font-size: 0.72rem;"></i></span>
             <input 
               type="text" 
               class="form-control border-start-0" 
               style="height: 30px; font-size: 0.76rem;" 
-              placeholder="Search by name, phone, email, or company..." 
+              placeholder="Search by name, category, phone, email..." 
               [(ngModel)]="searchTerm" 
               (input)="applyFilters()">
             <button *ngIf="searchTerm" class="btn btn-outline-secondary py-0" type="button" (click)="searchTerm = ''; applyFilters()">
               <i class="bi bi-x-lg" style="font-size: 0.7rem;"></i>
             </button>
           </div>
+        </div>
+
+        <!-- Filter by Category (if categories present) -->
+        <div class="col-md-2" *ngIf="availableCategories.length > 0">
+          <select class="form-select form-select-sm" style="height: 30px; font-size: 0.76rem;" [(ngModel)]="selectedCategory" (change)="applyFilters()">
+            <option value="All">All Categories</option>
+            <option *ngFor="let cat of availableCategories" [value]="cat">{{ cat }}</option>
+          </select>
         </div>
 
         <!-- Filter by Score -->
@@ -60,7 +68,7 @@
         </div>
 
         <!-- Filter by Status -->
-        <div class="col-md-3">
+        <div [class.col-md-2]="availableCategories.length > 0" [class.col-md-3]="availableCategories.length === 0">
           <select class="form-select form-select-sm" style="height: 30px; font-size: 0.76rem;" [(ngModel)]="selectedStatus" (change)="applyFilters()">
             <option value="All">All Stages / Statuses</option>
             <option value="New">New Inquiries</option>
@@ -133,7 +141,10 @@
               <span class="fw-semibold font-monospace" style="font-size: 0.78rem;">{{ lead.phone }}</span>
             </td>
             <td>
-              <span class="text-secondary" style="font-size: 0.76rem;">{{ lead.company_name }}</span>
+              <div class="text-secondary fw-semibold" style="font-size: 0.76rem;">{{ lead.company_name }}</div>
+              <span *ngIf="lead.category" class="badge bg-primary-subtle text-primary border border-primary-subtle badge-tag" style="font-size: 0.65rem;">
+                <i class="bi bi-tag-fill me-1"></i> {{ lead.category }}
+              </span>
             </td>
             <td>
               <span class="badge bg-light text-dark border badge-tag">
@@ -253,6 +264,10 @@
           <div class="col-6">
             <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Deal Value (₹)</label>
             <input type="number" class="form-control form-control-sm" [(ngModel)]="newLead.budget_value" placeholder="e.g. 500000">
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Category / Industry</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="newLead.category" placeholder="e.g. Coaching Institute, Hospital, Gym, Real Estate">
           </div>
         </div>
       </div>

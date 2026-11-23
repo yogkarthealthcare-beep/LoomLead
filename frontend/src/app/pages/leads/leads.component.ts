@@ -13,9 +13,11 @@ import { CrmService, Lead } from '../../services/crm.service';
 export class LeadsComponent implements OnInit {
   leads: Lead[] = [];
   filteredLeads: Lead[] = [];
+  availableCategories: string[] = [];
   searchTerm: string = '';
   selectedScore: string = 'All';
   selectedStatus: string = 'All';
+  selectedCategory: string = 'All';
   selectedLeadIds: Set<string> = new Set();
 
   // New Lead Modal state
@@ -25,6 +27,7 @@ export class LeadsComponent implements OnInit {
     phone: '',
     email: '',
     company_name: '',
+    category: 'Business & Commercial',
     source: 'Manual Entry',
     status: 'New',
     score: 'Warm',
@@ -52,8 +55,19 @@ export class LeadsComponent implements OnInit {
   loadLeads(): void {
     this.crmService.getLeads().subscribe(data => {
       this.leads = data;
+      this.extractCategories();
       this.applyFilters();
     });
+  }
+
+  extractCategories(): void {
+    const set = new Set<string>();
+    this.leads.forEach(l => {
+      if (l.category && l.category.trim()) {
+        set.add(l.category.trim());
+      }
+    });
+    this.availableCategories = Array.from(set).sort();
   }
 
   applyFilters(): void {
@@ -62,12 +76,14 @@ export class LeadsComponent implements OnInit {
         l.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         l.phone.includes(this.searchTerm) ||
         (l.email && l.email.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
-        (l.company_name && l.company_name.toLowerCase().includes(this.searchTerm.toLowerCase()));
+        (l.company_name && l.company_name.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
+        (l.category && l.category.toLowerCase().includes(this.searchTerm.toLowerCase()));
 
+      const matchCategory = this.selectedCategory === 'All' || l.category === this.selectedCategory;
       const matchScore = this.selectedScore === 'All' || l.score === this.selectedScore;
       const matchStatus = this.selectedStatus === 'All' || l.status === this.selectedStatus;
 
-      return matchSearch && matchScore && matchStatus;
+      return matchSearch && matchCategory && matchScore && matchStatus;
     });
   }
 
@@ -75,6 +91,7 @@ export class LeadsComponent implements OnInit {
     this.searchTerm = '';
     this.selectedScore = 'All';
     this.selectedStatus = 'All';
+    this.selectedCategory = 'All';
     this.applyFilters();
   }
 

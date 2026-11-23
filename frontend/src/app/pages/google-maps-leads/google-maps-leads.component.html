@@ -76,9 +76,22 @@
   <!-- Results Table Card -->
   <div class="card border-0 shadow-sm">
     <div class="card-header bg-white border-bottom py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-      <div class="d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
         <h6 class="fw-bold mb-0" style="font-size: 0.85rem;">Extracted Business Listings</h6>
-        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.68rem;">{{ results.length }} Found</span>
+        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.68rem;">{{ filteredResults.length }} / {{ results.length }} Found</span>
+        
+        <!-- Category Filter Dropdown -->
+        <div class="d-flex align-items-center gap-1 ms-2" *ngIf="availableCategories.length > 0">
+          <span class="text-muted fw-semibold" style="font-size: 0.68rem;"><i class="bi bi-tag-fill text-primary"></i> Category:</span>
+          <select 
+            class="form-select form-select-sm py-0 ps-2 pe-4" 
+            style="height: 24px; font-size: 0.7rem; max-width: 170px;" 
+            [(ngModel)]="selectedCategory" 
+            (change)="applyCategoryFilter()">
+            <option value="All">All Categories ({{ results.length }})</option>
+            <option *ngFor="let cat of availableCategories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
       </div>
       <div>
         <button class="btn btn-success btn-sm shadow-sm" style="font-size: 0.75rem; height: 28px;" [disabled]="selectedPlaces.size === 0" (click)="importSelected()">
@@ -95,6 +108,7 @@
               <input class="form-check-input mt-0" type="checkbox" style="width: 14px; height: 14px;" (change)="toggleSelectAll($event)">
             </th>
             <th>BUSINESS NAME</th>
+            <th>CATEGORY</th>
             <th>CONTACT PHONE</th>
             <th>FULL ADDRESS</th>
             <th>RATING & REVIEWS</th>
@@ -106,7 +120,7 @@
         <tbody>
           <!-- Loading State -->
           <tr *ngIf="isLoading">
-            <td colspan="8" class="text-center py-5">
+            <td colspan="9" class="text-center py-5">
               <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
               <div class="small fw-semibold text-dark">Extracting verified business leads from Google Maps...</div>
               <div class="text-muted" style="font-size: 0.72rem;">Searching live places for "{{ searchQuery }}" in {{ selectedCity || 'India' }}</div>
@@ -114,8 +128,8 @@
           </tr>
 
           <!-- Empty State -->
-          <tr *ngIf="!isLoading && results.length === 0">
-            <td colspan="8" class="text-center py-5">
+          <tr *ngIf="!isLoading && filteredResults.length === 0">
+            <td colspan="9" class="text-center py-5">
               <div class="d-flex flex-column align-items-center justify-content-center">
                 <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mb-2" style="width: 48px; height: 48px;">
                   <i class="bi bi-geo-alt-fill text-muted" style="font-size: 1.3rem;"></i>
@@ -128,7 +142,7 @@
             </td>
           </tr>
 
-          <tr *ngFor="let place of results">
+          <tr *ngFor="let place of filteredResults">
             <td class="text-center">
               <input 
                 class="form-check-input mt-0" 
@@ -140,7 +154,12 @@
             </td>
             <td>
               <div class="fw-semibold text-dark" style="font-size: 0.8rem; line-height: 1.2;">{{ place.name }}</div>
-              <small class="text-muted" style="font-size: 0.68rem;"><i class="bi bi-tag me-1"></i> {{ searchQuery }}</small>
+              <small class="text-muted" style="font-size: 0.68rem;"><i class="bi bi-geo-alt me-1"></i> {{ place.city }}</small>
+            </td>
+            <td>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle badge-tag">
+                <i class="bi bi-tag-fill me-1"></i> {{ place.category || 'Business' }}
+              </span>
             </td>
             <td>
               <span class="fw-semibold text-primary font-monospace" style="font-size: 0.78rem;">{{ place.phone }}</span>

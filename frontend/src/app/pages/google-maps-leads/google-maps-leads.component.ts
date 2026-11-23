@@ -15,11 +15,15 @@ export class GoogleMapsLeadsComponent implements OnInit {
   selectedCity: string = '';
   isLoading: boolean = false;
   results: GooglePlaceResult[] = [];
+  filteredResults: GooglePlaceResult[] = [];
+  availableCategories: string[] = [];
+  selectedCategory: string = 'All';
   selectedPlaces: Set<string> = new Set();
   importSuccessMessage: string = '';
 
   trendingKeywords = [
     { label: 'Coaching Institutes', city: 'Kanpur' },
+    { label: 'Top Hospitals', city: 'Kanpur' },
     { label: 'Real Estate Agents', city: 'Mumbai' },
     { label: 'Dental Clinics', city: 'Delhi' },
     { label: 'Gyms & Fitness', city: 'Bangalore' },
@@ -58,22 +62,45 @@ export class GoogleMapsLeadsComponent implements OnInit {
     this.isLoading = true;
     this.importSuccessMessage = '';
     this.selectedPlaces.clear();
+    this.selectedCategory = 'All';
 
     this.crmService.searchGoogleMaps(q, this.selectedCity.trim()).subscribe({
       next: (data) => {
         this.results = data || [];
+        this.extractCategories();
+        this.applyCategoryFilter();
         this.isLoading = false;
       },
       error: () => {
         this.results = [];
+        this.filteredResults = [];
+        this.availableCategories = [];
         this.isLoading = false;
       }
     });
   }
 
+  extractCategories(): void {
+    const set = new Set<string>();
+    this.results.forEach(r => {
+      if (r.category && r.category.trim()) {
+        set.add(r.category.trim());
+      }
+    });
+    this.availableCategories = Array.from(set).sort();
+  }
+
+  applyCategoryFilter(): void {
+    if (this.selectedCategory === 'All') {
+      this.filteredResults = this.results;
+    } else {
+      this.filteredResults = this.results.filter(r => r.category === this.selectedCategory);
+    }
+  }
+
   toggleSelectAll(event: any): void {
     if (event.target.checked) {
-      this.results.filter(r => !r.is_already_lead).forEach(r => this.selectedPlaces.add(r.place_id));
+      this.filteredResults.filter(r => !r.is_already_lead).forEach(r => this.selectedPlaces.add(r.place_id));
     } else {
       this.selectedPlaces.clear();
     }
@@ -88,7 +115,7 @@ export class GoogleMapsLeadsComponent implements OnInit {
   }
 
   importSelected(): void {
-    const toImport = this.results.filter(r => this.selectedPlaces.has(r.place_id));
+    const toImport = this.filteredResults.filter(r => this.selectedPlaces.has(r.place_id));
     if (toImport.length === 0) return;
 
     this.crmService.importGoogleMapsPlaces(toImport).subscribe(res => {

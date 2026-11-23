@@ -9,6 +9,7 @@ export interface Lead {
   phone: string;
   email: string;
   company_name: string;
+  category?: string;
   source: string;
   status: string;
   score: 'Hot' | 'Warm' | 'Cold';
@@ -31,6 +32,7 @@ export interface TaskItem {
 export interface GooglePlaceResult {
   place_id: string;
   name: string;
+  category?: string;
   phone: string;
   address: string;
   city: string;
@@ -75,6 +77,7 @@ export class CrmService {
             phone: l.phone || '',
             email: l.email || '',
             company_name: l.company_name || 'N/A',
+            category: l.category || 'Business & Commercial',
             source: l.source || 'Direct',
             status: l.status || 'New',
             score: l.score || 'Warm',
@@ -124,6 +127,7 @@ export class CrmService {
       phone: lead.phone || '',
       email: lead.email || '',
       company_name: lead.company_name || lead.name || 'N/A',
+      category: lead.category || 'Business & Commercial',
       source: lead.source || 'Manual Entry',
       status: lead.status || 'New',
       score: lead.score || 'Warm',
@@ -138,6 +142,7 @@ export class CrmService {
           phone: payload.phone,
           email: payload.email,
           company_name: payload.company_name,
+          category: payload.category,
           source: payload.source,
           status: payload.status,
           score: payload.score as any,
@@ -206,6 +211,7 @@ export class CrmService {
             phone: p.phone,
             email: p.website ? `contact@${p.website.replace(/^https?:\/\//, '').split('/')[0]}` : '',
             company_name: p.name,
+            category: p.category || 'Business & Commercial',
             source: 'Google Maps',
             score: 'Warm',
             status: 'New',
@@ -224,6 +230,7 @@ export class CrmService {
             phone: p.phone,
             email: '',
             company_name: p.name,
+            category: p.category || 'Business & Commercial',
             source: 'Google Maps',
             score: 'Warm',
             status: 'New',

@@ -6,7 +6,7 @@ const { checkPlanLimit } = require('../middleware/planGatingMiddleware');
 
 // Get All Leads with Filters, Search, Sort & Pagination
 router.get('/', authenticateToken, async (req, res) => {
-  const { search, score, status, source, city, page = 1, limit = 25, sort = 'created_at', order = 'DESC' } = req.query;
+  const { search, score, status, source, city, category, page = 1, limit = 50, sort = 'created_at', order = 'DESC' } = req.query;
   const offset = (page - 1) * limit;
 
   try {
@@ -19,31 +19,36 @@ router.get('/', authenticateToken, async (req, res) => {
 
     if (search) {
       params.push(`%${search}%`);
-      query += ` AND (l.name ILIKE $${params.length} OR l.phone ILIKE $${params.length} OR l.email ILIKE $${params.length} OR l.company_name ILIKE $${params.length})`;
+      query += ` AND (l.name ILIKE $${params.length} OR l.phone ILIKE $${params.length} OR l.email ILIKE $${params.length} OR l.company_name ILIKE $${params.length} OR l.category ILIKE $${params.length})`;
     }
 
-    if (score) {
+    if (score && score !== 'All') {
       params.push(score);
       query += ` AND l.score = $${params.length}`;
     }
 
-    if (status) {
+    if (status && status !== 'All') {
       params.push(status);
       query += ` AND l.status = $${params.length}`;
     }
 
-    if (source) {
+    if (category && category !== 'All') {
+      params.push(category);
+      query += ` AND l.category = $${params.length}`;
+    }
+
+    if (source && source !== 'All') {
       params.push(source);
       query += ` AND l.source = $${params.length}`;
     }
 
-    if (city) {
+    if (city && city !== 'All') {
       params.push(city);
       query += ` AND l.city = $${params.length}`;
     }
 
     // Sort order validation
-    const validSortCols = ['name', 'created_at', 'budget_value', 'next_followup_at', 'score', 'status'];
+    const validSortCols = ['name', 'created_at', 'budget_value', 'next_followup_at', 'score', 'status', 'category'];
     const sortCol = validSortCols.includes(sort) ? `l.${sort}` : 'l.created_at';
     const sortDir = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
@@ -66,6 +71,41 @@ router.get('/', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Leads fetch error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch leads.' });
+  }
+});
+
+// Create New Lead Manually
+router.post('/', authenticateToken, async (req, res) => {
+  const { name, phone, email, company_name, category, source, status, score, budget_value, notes } = req.body;
+  if (!name || !phone) {
+    return res.status(400).json({ success: false, message: 'Name and phone are required.' });
+  }
+
+  try {
+    const insertRes = await db.query(
+      `INSERT INTO leads 
+       (tenant_id, name, phone, email, company_name, category, source, status, score, budget_value, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING *`,
+      [
+        req.tenantId,
+        name,
+        phone,
+        email || null,
+        company_name || name,
+        category || 'Business & Commercial',
+        source || 'Manual Entry',
+        status || 'New',
+        score || 'Warm',
+        budget_value || 0,
+        notes || null
+      ]
+    );
+
+    res.json({ success: true, lead: insertRes.rows[0], message: 'Lead added successfully.' });
+  } catch (err) {
+    console.error('Lead create error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
@@ -118,7 +158,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Update Lead Details
 router.put('/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { name, phone, email, company_name, score, status, stage_id, budget_value, notes, next_followup_at } = req.body;
+  const { name, phone, email, company_name, category, score, status, stage_id, budget_value, notes, next_followup_at } = req.body;
 
   try {
     const updateRes = await db.query(
@@ -127,16 +167,17 @@ router.put('/:id', authenticateToken, async (req, res) => {
            phone = COALESCE($2, phone),
            email = COALESCE($3, email),
            company_name = COALESCE($4, company_name),
-           score = COALESCE($5, score),
-           status = COALESCE($6, status),
-           stage_id = COALESCE($7, stage_id),
-           budget_value = COALESCE($8, budget_value),
-           notes = COALESCE($9, notes),
-           next_followup_at = COALESCE($10, next_followup_at),
+           category = COALESCE($5, category),
+           score = COALESCE($6, score),
+           status = COALESCE($7, status),
+           stage_id = COALESCE($8, stage_id),
+           budget_value = COALESCE($9, budget_value),
+           notes = COALESCE($10, notes),
+           next_followup_at = COALESCE($11, next_followup_at),
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $11 AND tenant_id = $12
+       WHERE id = $12 AND tenant_id = $13
        RETURNING *`,
-      [name, phone, email, company_name, score, status, stage_id, budget_value, notes, next_followup_at, id, req.tenantId]
+      [name, phone, email, company_name, category, score, status, stage_id, budget_value, notes, next_followup_at, id, req.tenantId]
     );
 
     if (updateRes.rows.length === 0) {

@@ -29,12 +29,64 @@ class GoogleMapsService {
   }
 
   /**
-   * Scrapes live Google Maps places using internal Maps RPC
+   * Smart Business Category Classification Engine
+   * Detects exact category from Google Maps taxonomy or analyzes business name + query
    */
+  detectCategory(name = '', query = '', rawCategory = '') {
+    if (rawCategory && typeof rawCategory === 'string' && rawCategory.trim()) {
+      let clean = rawCategory.trim();
+      if (clean.includes('_')) {
+        clean = clean.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      }
+      return clean;
+    }
+
+    const combined = `${name} ${query}`.toLowerCase();
+    if (/hospital|clinic|nursing\s*home|doctor|medical|health\s*care|pharma|dental|ortho|ayurv/i.test(combined)) {
+      if (/dental/i.test(combined)) return 'Dental Clinic';
+      if (/eye/i.test(combined)) return 'Eye Care Clinic';
+      return 'Hospital & Healthcare';
+    }
+    if (/coaching|academy|institute|classes|tuition|school|college|educat|training|university|learning/i.test(combined)) {
+      if (/iit|jee|neet|foundation/i.test(combined)) return 'IIT-JEE / NEET Coaching';
+      if (/upsc|ias|civil\s*services|ssc|banking/i.test(combined)) return 'Govt Exam Coaching';
+      if (/coding|software|computer/i.test(combined)) return 'Computer & Tech Training';
+      return 'Coaching Institute';
+    }
+    if (/gym|fitness|workout|crossfit|yoga|zumba|wellness/i.test(combined)) {
+      return 'Gym & Fitness Center';
+    }
+    if (/interior|decor|architect|furnishing|designer/i.test(combined)) {
+      return 'Interior Designer';
+    }
+    if (/real\s*estate|realty|developer|builder|properties|infrastructure|infra/i.test(combined)) {
+      return 'Real Estate & Properties';
+    }
+    if (/hotel|resort|restaurant|cafe|dhaba|bistro|banquet|catering/i.test(combined)) {
+      return 'Hospitality & Restaurant';
+    }
+    if (/software|infotech|tech|digital\s*marketing|web|agency|consulting|consultant|solutions|it\s*services/i.test(combined)) {
+      return 'IT & Digital Services';
+    }
+    if (/lawyer|advocate|legal|attorney|law\s*firm/i.test(combined)) {
+      return 'Legal Services / Law Firm';
+    }
+    if (/ca|chartered\s*accountant|accounting|tax|auditor/i.test(combined)) {
+      return 'Chartered Accountant / Tax';
+    }
+    if (/salon|parlour|spa|beauty|makeup/i.test(combined)) {
+      return 'Salon & Spa';
+    }
+    if (query) {
+      return query.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+    return 'Business & Commercial';
+  }
+
   /**
    * Scrapes live Google Maps places using internal Maps RPC
    */
-  async scrapeLiveGoogleMaps(fullQuery, location = '') {
+  async scrapeLiveGoogleMaps(fullQuery, location = '', originalQuery = '') {
     try {
       const encoded = encodeURIComponent(fullQuery);
       const mainUrl = `https://www.google.com/maps/search/${encoded}?hl=en`;
@@ -103,6 +155,17 @@ class GoogleMapsService {
           address = `${name}, ${location || 'India'}`;
         }
 
+        // Extract Google Maps Category
+        let rawCategory = null;
+        if (p[13] && Array.isArray(p[13]) && p[13][0] && typeof p[13][0] === 'string') {
+          rawCategory = p[13][0];
+        } else if (p[76] && Array.isArray(p[76]) && p[76][0] && typeof p[76][0][0] === 'string') {
+          rawCategory = p[76][0][0];
+        } else if (p[164] && Array.isArray(p[164]) && Array.isArray(p[164][0]) && typeof p[164][0][1] === 'string') {
+          rawCategory = p[164][0][1];
+        }
+        const category = this.detectCategory(name, originalQuery || fullQuery, rawCategory);
+
         // Extract phone number from field 178
         let phone = null;
         if (p[178] && Array.isArray(p[178]) && p[178][0]) {
@@ -148,6 +211,7 @@ class GoogleMapsService {
         extracted.push({
           place_id,
           name,
+          category,
           phone,
           address,
           city: location || 'India',
@@ -200,6 +264,7 @@ class GoogleMapsService {
           results = response.data.results.map(place => ({
             place_id: place.place_id,
             name: place.name,
+            category: (place.types && place.types[0]) ? this.detectCategory(place.name, cleanQuery, place.types[0]) : this.detectCategory(place.name, cleanQuery, ''),
             phone: place.formatted_phone_number || '+91 9' + Math.floor(100000000 + Math.random() * 900000000),
             address: place.formatted_address || `${place.name}, ${targetCity || 'India'}`,
             city: targetCity || location || 'India',
@@ -216,7 +281,7 @@ class GoogleMapsService {
 
     // 2. If no API key or API call returned empty, run live Google Maps scraper
     if (results.length === 0) {
-      results = await this.scrapeLiveGoogleMaps(fullQuery, targetCity || location);
+      results = await this.scrapeLiveGoogleMaps(fullQuery, targetCity || location, cleanQuery);
     }
 
     if (!results) {
@@ -278,14 +343,15 @@ class GoogleMapsService {
         if (dupCheck.rows.length === 0) {
           const insertRes = await client.query(
             `INSERT INTO leads 
-             (tenant_id, name, phone, company_name, address, city, source, status, score, stage_id, assigned_to_user_id, notes)
-             VALUES ($1, $2, $3, $4, $5, $6, 'Google Maps', 'New', 'Warm', $7, $8, $9)
-             RETURNING id, name, phone, company_name`,
+             (tenant_id, name, phone, company_name, category, address, city, source, status, score, stage_id, assigned_to_user_id, notes)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'Google Maps', 'New', 'Warm', $8, $9, $10)
+             RETURNING id, name, phone, company_name, category`,
             [
               tenantId,
               item.name,
               item.phone,
               item.name,
+              item.category || 'Business & Commercial',
               item.address,
               item.city || 'Default City',
               defaultStageId || null,
@@ -297,14 +363,15 @@ class GoogleMapsService {
           // Save reference in google_maps_leads cache table
           await client.query(
             `INSERT INTO google_maps_leads
-             (tenant_id, search_keyword, location_query, place_id, business_name, phone, formatted_address, city, rating, user_ratings_total, website_url, is_imported, imported_lead_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE, $12)`,
+             (tenant_id, search_keyword, location_query, place_id, business_name, category, phone, formatted_address, city, rating, user_ratings_total, website_url, is_imported, imported_lead_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13)`,
             [
               tenantId,
               item.search_keyword || 'Keyword',
               item.city || 'City',
               item.place_id,
               item.name,
+              item.category || 'Business & Commercial',
               item.phone,
               item.address,
               item.city,
