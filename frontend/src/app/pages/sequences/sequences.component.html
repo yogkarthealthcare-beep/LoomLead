@@ -1,0 +1,638 @@
+<div class="container-fluid py-3 px-3">
+  <!-- Top Header -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div>
+      <div class="d-flex align-items-center gap-2">
+        <h5 class="fw-bold mb-0" style="font-size: 1.15rem;">Automated Sequences & Drip Outreach</h5>
+        <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.68rem;">Multi-Channel Engine</span>
+      </div>
+      <span class="text-muted" style="font-size: 0.72rem;">
+        Orchestrate multi-step personalized email & WhatsApp drip campaigns with smart reply detection, sender rotation, and suppression compliance.
+      </span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <!-- Trigger Worker -->
+      <button class="btn btn-outline-primary btn-sm shadow-sm" (click)="triggerWorkerNow()" [disabled]="isLoading" style="font-size: 0.75rem;">
+        <i class="bi bi-play-circle-fill me-1"></i> Trigger Worker (Run Now)
+      </button>
+      <!-- Sender Accounts -->
+      <button class="btn btn-outline-secondary btn-sm shadow-sm" (click)="showSendersModal = true" style="font-size: 0.75rem;">
+        <i class="bi bi-envelope-at-fill me-1"></i> Senders ({{ senders.length }})
+      </button>
+      <!-- New Sequence -->
+      <button class="btn btn-primary btn-sm shadow-sm" (click)="openCreateSequenceModal()" style="font-size: 0.75rem;">
+        <i class="bi bi-plus-circle-fill me-1"></i> + New Sequence
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Alert -->
+  <div *ngIf="toastMessage" class="alert alert-{{ toastType }} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center gap-2 py-2 px-3 mb-3" style="font-size: 0.78rem;">
+    <i class="bi" [class.bi-check-circle-fill]="toastType === 'success'" [class.bi-exclamation-triangle-fill]="toastType === 'danger'"></i>
+    <div class="flex-grow-1">{{ toastMessage }}</div>
+    <button type="button" class="btn-close py-2" (click)="toastMessage = ''"></button>
+  </div>
+
+  <!-- Main Grid: Left Sequence Selector / Right Builder & Analytics -->
+  <div class="row g-3">
+    <!-- LEFT: Sequence Selector Sidebar -->
+    <div class="col-lg-3 col-md-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+          <span class="fw-semibold small text-uppercase text-muted" style="font-size: 0.72rem;">All Sequences ({{ sequences.length }})</span>
+          <button class="btn btn-light btn-sm py-0 px-1 text-primary" (click)="loadSequences()" title="Refresh">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+        <div class="list-group list-group-flush" style="max-height: 600px; overflow-y: auto;">
+          <div *ngIf="sequences.length === 0 && !isLoading" class="p-4 text-center text-muted small">
+            <i class="bi bi-diagram-3 display-6 text-secondary opacity-50 d-block mb-2"></i>
+            No sequences yet. Click <strong>+ New Sequence</strong> to create your first outreach flow.
+          </div>
+
+          <button 
+            type="button" 
+            class="list-group-item list-group-item-action p-3 text-start"
+            *ngFor="let seq of sequences"
+            [class.active]="selectedSequence?.id === seq.id"
+            (click)="selectSequence(seq)">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="fw-bold text-truncate" style="font-size: 0.85rem;" [class.text-white]="selectedSequence?.id === seq.id">{{ seq.name }}</span>
+              <span class="badge" 
+                    [class.bg-success]="seq.status === 'active'" 
+                    [class.bg-warning]="seq.status === 'paused'" 
+                    [class.bg-secondary]="seq.status === 'draft'"
+                    style="font-size: 0.62rem;">
+                {{ seq.status | uppercase }}
+              </span>
+            </div>
+            <div class="d-flex align-items-center gap-2 text-muted small" style="font-size: 0.7rem;" [class.text-white-50]="selectedSequence?.id === seq.id">
+              <span><i class="bi bi-layers me-1"></i>{{ seq.total_steps || 0 }} steps</span>
+              <span>•</span>
+              <span><i class="bi bi-people me-1"></i>{{ seq.total_enrolled || 0 }} enrolled</span>
+              <span>•</span>
+              <span><i class="bi bi-chat-dots me-1"></i>{{ seq.replied_count || 0 }} replies</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Sequence Analytics, Builder, Enrollments, Logs -->
+    <div class="col-lg-9 col-md-8" *ngIf="selectedSequence">
+      <!-- Sequence Overview Header Card -->
+      <div class="card border-0 shadow-sm p-3 mb-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="fw-bold mb-0 text-dark">{{ selectedSequence.name }}</h5>
+              <span class="badge" 
+                    [class.bg-success]="selectedSequence.status === 'active'" 
+                    [class.bg-warning]="selectedSequence.status === 'paused'" 
+                    [class.bg-secondary]="selectedSequence.status === 'draft'">
+                {{ selectedSequence.status | uppercase }}
+              </span>
+            </div>
+            <div class="text-muted small mt-1" style="font-size: 0.72rem;">
+              <i class="bi bi-clock me-1"></i> Send Window: <strong>{{ selectedSequence.send_window_start }} - {{ selectedSequence.send_window_end }}</strong> ({{ selectedSequence.timezone }})
+              &nbsp;|&nbsp;
+              <i class="bi bi-speedometer2 me-1"></i> Daily Limit: <strong>{{ selectedSequence.daily_limit }} msgs/day</strong>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <!-- Enroll Leads -->
+            <button class="btn btn-success btn-sm shadow-sm" (click)="openEnrollLeadsModal()" style="font-size: 0.75rem;">
+              <i class="bi bi-person-plus-fill me-1"></i> Enroll Leads
+            </button>
+            <!-- Edit Sequence -->
+            <button class="btn btn-outline-secondary btn-sm" (click)="openEditSequenceModal()" style="font-size: 0.75rem;">
+              <i class="bi bi-gear-fill me-1"></i> Settings
+            </button>
+            <!-- Delete -->
+            <button class="btn btn-outline-danger btn-sm" (click)="deleteCurrentSequence()" title="Delete Sequence">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Real-time Analytics Counters -->
+        <div class="row g-2 mt-3 pt-3 border-top">
+          <div class="col">
+            <div class="p-2 bg-light rounded text-center">
+              <div class="text-muted small" style="font-size: 0.68rem;">ENROLLED</div>
+              <div class="fs-5 fw-bold text-dark">{{ selectedSequence.total_enrolled || selectedSequence.steps?.length ? (selectedSequence.total_enrolled || 0) : 0 }}</div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="p-2 bg-light rounded text-center">
+              <div class="text-muted small" style="font-size: 0.68rem;">ACTIVE</div>
+              <div class="fs-5 fw-bold text-primary">{{ selectedSequence.active_enrolled || 0 }}</div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="p-2 bg-light rounded text-center">
+              <div class="text-muted small" style="font-size: 0.68rem;">MESSAGES SENT</div>
+              <div class="fs-5 fw-bold text-info">{{ selectedSequence.messages_sent || 0 }}</div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="p-2 bg-light rounded text-center">
+              <div class="text-muted small text-success fw-bold" style="font-size: 0.68rem;">REPLIED (STOPPED)</div>
+              <div class="fs-5 fw-bold text-success">{{ selectedSequence.replied_count || 0 }}</div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="p-2 bg-light rounded text-center">
+              <div class="text-muted small" style="font-size: 0.68rem;">COMPLETED</div>
+              <div class="fs-5 fw-bold text-secondary">{{ selectedSequence.completed_count || 0 }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs: Builder / Enrollments / Message Logs -->
+      <ul class="nav nav-pills mb-3 border-bottom pb-2">
+        <li class="nav-item">
+          <button class="nav-link py-1 px-3 me-2" [class.active]="activeTab === 'builder'" (click)="setTab('builder')" style="font-size: 0.8rem;">
+            <i class="bi bi-diagram-3 me-1"></i> Sequence Builder & Steps ({{ selectedSequence.steps?.length || 0 }})
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link py-1 px-3 me-2" [class.active]="activeTab === 'enrollments'" (click)="setTab('enrollments')" style="font-size: 0.8rem;">
+            <i class="bi bi-people me-1"></i> Active Enrollments ({{ enrollments.length }})
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link py-1 px-3" [class.active]="activeTab === 'logs'" (click)="setTab('logs')" style="font-size: 0.8rem;">
+            <i class="bi bi-journal-text me-1"></i> Message Audit Logs
+          </button>
+        </li>
+      </ul>
+
+      <!-- TAB 1: SEQUENCE BUILDER TIMELINE -->
+      <div *ngIf="activeTab === 'builder'">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="fw-semibold text-secondary small" style="font-size: 0.76rem;">
+            Steps execute in sequential order. A customer reply immediately stops all remaining steps.
+          </span>
+          <button class="btn btn-primary btn-sm shadow-sm" (click)="openAddStepModal()" style="font-size: 0.75rem;">
+            <i class="bi bi-plus-lg me-1"></i> Add Step
+          </button>
+        </div>
+
+        <!-- Empty Steps State -->
+        <div *ngIf="(!selectedSequence.steps || selectedSequence.steps.length === 0)" class="card border-0 shadow-sm p-5 text-center text-muted">
+          <i class="bi bi-layers display-4 text-primary opacity-50 mb-2"></i>
+          <h6 class="fw-bold">No Steps in this Sequence</h6>
+          <p class="small text-muted mb-3">Add Day 1, Day 3, and Day 5 touchpoints across Email and WhatsApp.</p>
+          <button class="btn btn-primary btn-sm mx-auto" (click)="openAddStepModal()">
+            <i class="bi bi-plus-lg me-1"></i> Add First Step
+          </button>
+        </div>
+
+        <!-- Step Cards Timeline -->
+        <div class="d-flex flex-column gap-3" *ngIf="selectedSequence.steps && selectedSequence.steps.length > 0">
+          <div class="card border-0 shadow-sm p-3 position-relative" *ngFor="let step of selectedSequence.steps; let i = index">
+            <!-- Step Header -->
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">
+                  {{ step.step_order }}
+                </span>
+                <span class="badge bg-light text-dark border fw-semibold px-2 py-1" style="font-size: 0.72rem;">
+                  <i class="bi bi-calendar-event me-1 text-primary"></i>
+                  {{ step.minute_offset ? ('Wait ' + step.minute_offset + ' min (Test)') : ('Day ' + step.day_offset) }}
+                </span>
+                <span class="badge" 
+                      [class.bg-warning-subtle]="step.channel === 'email'" 
+                      [class.text-warning]="step.channel === 'email'" 
+                      [class.border]="true"
+                      [class.border-warning-subtle]="step.channel === 'email'"
+                      [class.bg-success-subtle]="step.channel === 'whatsapp'"
+                      [class.text-success]="step.channel === 'whatsapp'"
+                      [class.border-success-subtle]="step.channel === 'whatsapp'"
+                      style="font-size: 0.72rem;">
+                  <i class="bi" [class.bi-envelope-fill]="step.channel === 'email'" [class.bi-whatsapp]="step.channel === 'whatsapp'"></i>
+                  {{ step.channel | uppercase }}
+                </span>
+              </div>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-light btn-sm text-secondary" (click)="openEditStepModal(step)" title="Edit Step">
+                  <i class="bi bi-pencil"></i> Edit
+                </button>
+                <button class="btn btn-light btn-sm text-danger" (click)="deleteStep(step.id)" title="Delete Step">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Subject (for Email) -->
+            <div *ngIf="step.channel === 'email' && step.subject" class="fw-semibold text-dark small mb-1" style="font-size: 0.78rem;">
+              <span class="text-muted">Subject:</span> {{ step.subject }}
+            </div>
+
+            <!-- Body Content Preview -->
+            <div class="bg-light p-2 rounded small text-secondary font-monospace" style="font-size: 0.72rem; white-space: pre-line;">
+              {{ step.body_content }}
+            </div>
+
+            <!-- Unsubscribe Note for Email -->
+            <div *ngIf="step.channel === 'email'" class="mt-2 text-muted" style="font-size: 0.65rem;">
+              <i class="bi bi-shield-check text-success me-1"></i> Includes compliance unsubscribe link automatically appended to footer.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: ACTIVE ENROLLMENTS -->
+      <div *ngIf="activeTab === 'enrollments'">
+        <div class="card border-0 shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>LEAD / COMPANY</th>
+                  <th>PHONE / EMAIL</th>
+                  <th>STAGE</th>
+                  <th>CURRENT STEP</th>
+                  <th>STATUS</th>
+                  <th>NEXT RUN AT</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="enrollments.length === 0">
+                  <td colspan="6" class="text-center py-4 text-muted small">No leads enrolled in this sequence yet.</td>
+                </tr>
+                <tr *ngFor="let item of enrollments">
+                  <td>
+                    <div class="fw-semibold text-dark small">{{ item.lead_name }}</div>
+                    <small class="text-muted">{{ item.company_name }}</small>
+                  </td>
+                  <td>
+                    <div class="small font-monospace">{{ item.lead_phone }}</div>
+                    <small class="text-muted">{{ item.lead_email }}</small>
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-dark border">{{ item.lead_stage }}</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                      Step {{ item.current_step }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge" 
+                          [class.bg-success]="item.status === 'active'"
+                          [class.bg-warning]="item.status === 'paused'"
+                          [class.bg-info]="item.status === 'replied'"
+                          [class.bg-secondary]="item.status === 'completed'"
+                          [class.bg-danger]="item.status === 'failed' || item.status === 'stopped'">
+                      {{ item.status | uppercase }}
+                    </span>
+                    <div *ngIf="item.last_error" class="text-danger small" style="font-size: 0.65rem;">
+                      {{ item.last_error }}
+                    </div>
+                  </td>
+                  <td>
+                    <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ item.next_run_at | date:'short' }}</small>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: MESSAGE AUDIT LOGS -->
+      <div *ngIf="activeTab === 'logs'">
+        <div class="card border-0 shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>TIME</th>
+                  <th>RECIPIENT</th>
+                  <th>CHANNEL</th>
+                  <th>SENDER</th>
+                  <th>SUBJECT / PREVIEW</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="messageLogs.length === 0">
+                  <td colspan="6" class="text-center py-4 text-muted small">No outreach messages logged yet.</td>
+                </tr>
+                <tr *ngFor="let log of messageLogs">
+                  <td><small class="text-muted">{{ log.sent_at | date:'short' }}</small></td>
+                  <td>
+                    <div class="fw-semibold small">{{ log.lead_name }}</div>
+                    <small class="text-muted font-monospace">{{ log.recipient }}</small>
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-dark border text-uppercase">{{ log.channel }}</span>
+                  </td>
+                  <td><small class="text-muted">{{ log.sender_email || 'N/A' }}</small></td>
+                  <td style="max-width: 280px;" class="text-truncate">
+                    <small>{{ log.subject || log.body_content }}</small>
+                  </td>
+                  <td>
+                    <span class="badge" [class.bg-success]="log.status === 'sent'" [class.bg-danger]="log.status === 'failed' || log.status === 'blocked'">
+                      {{ log.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: CREATE / EDIT SEQUENCE                                             -->
+<!-- ========================================================================= -->
+<div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" *ngIf="showSequenceModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-primary text-white">
+        <h6 class="modal-title fw-bold" style="font-size: 0.9rem;">
+          <i class="bi bi-diagram-3-fill me-1"></i> {{ isEditingSequence ? 'Edit Sequence Settings' : 'Create New Outreach Sequence' }}
+        </h6>
+        <button type="button" class="btn-close btn-close-white" (click)="showSequenceModal = false"></button>
+      </div>
+      <div class="modal-body p-3">
+        <form (ngSubmit)="saveSequence()">
+          <!-- Sequence Name -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Sequence Name</label>
+            <input type="text" class="form-control form-control-sm" placeholder="e.g. Real Estate VIP Buyers - 3-Step Drip" [(ngModel)]="sequenceForm.name" name="name" required>
+          </div>
+
+          <!-- Status & Daily Cap -->
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Status</label>
+              <select class="form-select form-select-sm" [(ngModel)]="sequenceForm.status" name="status">
+                <option value="active">Active (Running)</option>
+                <option value="paused">Paused</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Daily Sending Cap</label>
+              <input type="number" class="form-control form-control-sm" [(ngModel)]="sequenceForm.daily_limit" name="daily_limit" min="1" max="5000">
+            </div>
+          </div>
+
+          <!-- Send Window -->
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Send Window Start</label>
+              <input type="text" class="form-control form-control-sm" placeholder="09:00" [(ngModel)]="sequenceForm.send_window_start" name="send_window_start">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Send Window End</label>
+              <input type="text" class="form-control form-control-sm" placeholder="18:00" [(ngModel)]="sequenceForm.send_window_end" name="send_window_end">
+            </div>
+          </div>
+
+          <!-- Timezone -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Target Timezone</label>
+            <select class="form-select form-select-sm" [(ngModel)]="sequenceForm.timezone" name="timezone">
+              <option value="Asia/Kolkata">Asia/Kolkata (IST +5:30)</option>
+              <option value="UTC">UTC</option>
+              <option value="America/New_York">America/New_York (EST)</option>
+              <option value="Europe/London">Europe/London (GMT)</option>
+            </select>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-light btn-sm" (click)="showSequenceModal = false">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm shadow-sm">Save Sequence</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: ADD / EDIT STEP                                                    -->
+<!-- ========================================================================= -->
+<div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" *ngIf="showStepModal">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-primary text-white">
+        <h6 class="modal-title fw-bold" style="font-size: 0.9rem;">
+          <i class="bi bi-layers-fill me-1"></i> {{ isEditingStep ? 'Edit Step #' + stepForm.step_order : 'Add Step to Sequence' }}
+        </h6>
+        <button type="button" class="btn-close btn-close-white" (click)="showStepModal = false"></button>
+      </div>
+      <div class="modal-body p-3">
+        <form (ngSubmit)="saveStep()">
+          <div class="row g-2 mb-3">
+            <!-- Channel -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Outreach Channel</label>
+              <select class="form-select form-select-sm" [(ngModel)]="stepForm.channel" name="channel">
+                <option value="email">✉️ Email Outreach</option>
+                <option value="whatsapp">💬 WhatsApp Message</option>
+              </select>
+            </div>
+            <!-- Day Offset -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Day Schedule</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">Day</span>
+                <input type="number" class="form-control" [(ngModel)]="stepForm.day_offset" name="day_offset" min="1">
+              </div>
+            </div>
+            <!-- Minute Offset (Fast testing) -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Minute Offset (Test Mode)</label>
+              <input type="number" class="form-control form-control-sm" placeholder="Leave empty for days" [(ngModel)]="stepForm.minute_offset" name="minute_offset">
+            </div>
+          </div>
+
+          <!-- Subject (Email Only) -->
+          <div class="mb-3" *ngIf="stepForm.channel === 'email'">
+            <label class="form-label fw-semibold small">Email Subject</label>
+            <input type="text" class="form-control form-control-sm" [placeholder]="'e.g. Quick question regarding {{company}}'" [(ngModel)]="stepForm.subject" name="subject">
+          </div>
+
+          <!-- Variable Insertion Helper Chips -->
+          <div class="mb-2">
+            <span class="text-muted small me-2" style="font-size: 0.72rem;">Click to insert merge variables:</span>
+            <div class="d-inline-flex flex-wrap gap-1">
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" (click)="insertVariable('name')" style="font-size: 0.68rem;">{{ '{{name}}' }}</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" (click)="insertVariable('first_name')" style="font-size: 0.68rem;">{{ '{{first_name}}' }}</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" (click)="insertVariable('company')" style="font-size: 0.68rem;">{{ '{{company}}' }}</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" (click)="insertVariable('category')" style="font-size: 0.68rem;">{{ '{{category}}' }}</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" (click)="insertVariable('city')" style="font-size: 0.68rem;">{{ '{{city}}' }}</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" (click)="insertVariable('icebreaker')" style="font-size: 0.68rem;">{{ '{{icebreaker}}' }}</button>
+            </div>
+          </div>
+
+          <!-- Body Content -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Message Content Template</label>
+            <textarea class="form-control form-control-sm font-monospace" rows="6" [(ngModel)]="stepForm.body_content" name="body_content" required></textarea>
+            <small class="text-muted" style="font-size: 0.68rem;" *ngIf="stepForm.channel === 'email'">
+              ℹ️ Unsubscribe link and DND compliance footer will automatically be appended.
+            </small>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-light btn-sm" (click)="showStepModal = false">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm shadow-sm">Save Step</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: SENDER ACCOUNTS (MULTIPLE EMAIL ROTATION)                           -->
+<!-- ========================================================================= -->
+<div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" *ngIf="showSendersModal">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-dark text-white">
+        <h6 class="modal-title fw-bold" style="font-size: 0.9rem;">
+          <i class="bi bi-envelope-at-fill me-1 text-primary"></i> Sender Email Rotation & Daily Caps
+        </h6>
+        <button type="button" class="btn-close btn-close-white" (click)="showSendersModal = false"></button>
+      </div>
+      <div class="modal-body p-3">
+        <!-- Add Sender Form -->
+        <div class="card bg-light border-0 p-3 mb-3">
+          <div class="fw-semibold small mb-2"><i class="bi bi-plus-circle me-1 text-primary"></i> Add New Outreach Sender Account</div>
+          <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+              <label class="form-label small mb-1">Sender Email</label>
+              <input type="email" class="form-control form-control-sm" placeholder="e.g. alex@loomlead.com" [(ngModel)]="newSender.email">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small mb-1">Display Name</label>
+              <input type="text" class="form-control form-control-sm" placeholder="e.g. Alex from LoomLead" [(ngModel)]="newSender.display_name">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">Daily Cap</label>
+              <input type="number" class="form-control form-control-sm" [(ngModel)]="newSender.daily_cap" min="1" max="1000">
+            </div>
+            <div class="col-md-1">
+              <button class="btn btn-primary btn-sm w-100" (click)="addSenderAccount()" title="Add Sender">
+                <i class="bi bi-plus-lg"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Senders List -->
+        <table class="table table-hover align-middle table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>SENDER EMAIL</th>
+              <th>DISPLAY NAME</th>
+              <th>DAILY CAP</th>
+              <th>SENT TODAY</th>
+              <th class="text-end">ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="senders.length === 0">
+              <td colspan="5" class="text-center py-3 text-muted small">No sender emails added yet. Outreach will use system default.</td>
+            </tr>
+            <tr *ngFor="let s of senders">
+              <td class="fw-semibold small font-monospace">{{ s.email }}</td>
+              <td class="small">{{ s.display_name || 'N/A' }}</td>
+              <td><span class="badge bg-light text-dark border">{{ s.daily_cap }} msgs/day</span></td>
+              <td>
+                <span class="badge" [class.bg-success]="s.sent_today < s.daily_cap" [class.bg-danger]="s.sent_today >= s.daily_cap">
+                  {{ s.sent_today }} / {{ s.daily_cap }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button class="btn btn-outline-danger btn-sm py-0 px-2" (click)="removeSenderAccount(s.id)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: ENROLL LEADS INTO SEQUENCE                                         -->
+<!-- ========================================================================= -->
+<div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" *ngIf="showEnrollModal">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-success text-white">
+        <h6 class="modal-title fw-bold" style="font-size: 0.9rem;">
+          <i class="bi bi-person-plus-fill me-1"></i> Enroll Leads into "{{ selectedSequence?.name }}"
+        </h6>
+        <button type="button" class="btn-close btn-close-white" (click)="showEnrollModal = false"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="small text-muted">Select leads to begin sequence outreach. Suppressed (DND) leads will automatically be excluded.</span>
+          <div class="form-check form-switch small">
+            <input class="form-check-input" type="checkbox" id="immediateRunSwitch" [(ngModel)]="enrollImmediate">
+            <label class="form-check-label" for="immediateRunSwitch">Start Step 1 immediately</label>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-hover align-middle table-sm mb-0">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th width="32">
+                  <input class="form-check-input mt-0" type="checkbox" (change)="toggleSelectAllLeads($event)">
+                </th>
+                <th>LEAD / CLIENT NAME</th>
+                <th>PHONE</th>
+                <th>EMAIL</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let lead of availableLeads">
+                <td>
+                  <input class="form-check-input mt-0" type="checkbox" [checked]="selectedLeadIds.has(lead.id)" (change)="toggleLeadSelection(lead.id)">
+                </td>
+                <td>
+                  <div class="fw-semibold text-dark small">{{ lead.name }}</div>
+                  <small class="text-muted">{{ lead.company_name }}</small>
+                </td>
+                <td>
+                  <span class="font-monospace small">{{ lead.phone }}</span>
+                  <span *ngIf="lead.is_dnd" class="badge bg-danger ms-1" style="font-size: 0.6rem;">DND</span>
+                </td>
+                <td><small class="text-muted">{{ lead.email || 'No email' }}</small></td>
+                <td><span class="badge bg-light text-dark border">{{ lead.status }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+          <span class="fw-semibold small text-primary">{{ selectedLeadIds.size }} lead(s) selected</span>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-light btn-sm" (click)="showEnrollModal = false">Cancel</button>
+            <button type="button" class="btn btn-success btn-sm shadow-sm" (click)="submitEnrollment()">
+              <i class="bi bi-check2-circle me-1"></i> Confirm & Enroll
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

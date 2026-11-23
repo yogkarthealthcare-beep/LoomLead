@@ -4,6 +4,7 @@ const db = require('../config/db');
 const { authenticateToken } = require('../middleware/authMiddleware');
 const suppressionService = require('../services/suppressionService');
 const hygieneService = require('../services/hygieneService');
+const sequenceService = require('../services/sequenceService');
 
 // 1. Get Suppression / DND List for Tenant
 router.get('/', authenticateToken, async (req, res) => {
@@ -161,12 +162,24 @@ router.post(['/webhooks/whatsapp', '/whatsapp'], async (req, res) => {
       messageText
     );
 
+    // If not suppressed (e.g. normal reply), check and auto-pause active sequence enrollments
+    let replyHandled = null;
+    if (!webhookResult.suppressed && messageText) {
+      replyHandled = await sequenceService.handleLeadReply(
+        tenantId,
+        senderPhone,
+        'whatsapp',
+        messageText
+      );
+    }
+
     res.json({
       success: true,
       processed: true,
       suppressed: webhookResult.suppressed,
       reason: webhookResult.reason || null,
-      phone: webhookResult.normalizedPhone || null
+      phone: webhookResult.normalizedPhone || null,
+      replyHandled
     });
   } catch (err) {
     console.error('WhatsApp webhook error:', err);

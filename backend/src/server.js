@@ -14,6 +14,8 @@ const importExportRoutes = require('./routes/importExportRoutes');
 const superAdminRoutes = require('./routes/superAdminRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const suppressionRoutes = require('./routes/suppressionRoutes');
+const sequenceRoutes = require('./routes/sequenceRoutes');
+const sequenceWorker = require('./services/sequenceWorker');
 const { getDashboardStats } = require('./controllers/dashboardController');
 
 const app = express();
@@ -71,6 +73,9 @@ app.use('/api/v1/ai-agent', aiAgentRoutes);
 app.use('/api/v1/suppression', suppressionRoutes);
 app.use('/api/v1/webhooks', suppressionRoutes); // Convenience alias for webhooks (e.g. /api/v1/webhooks/whatsapp)
 
+// Sequence (Drip) Outreach Engine
+app.use('/api/v1/sequences', sequenceRoutes);
+
 // Import & Export (PDF, Excel, Word, CSV)
 app.use('/api/v1/import-export', importExportRoutes);
 
@@ -90,4 +95,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 LoomLead CRM Backend API running on port ${PORT}`);
   console.log(`📡 Health Check: http://localhost:${PORT}/api/health`);
+
+  // Start Background Sequence Drip Worker
+  sequenceWorker.start();
 });

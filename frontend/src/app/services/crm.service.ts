@@ -30,6 +30,76 @@ export interface SuppressionEntry {
   created_at: string;
 }
 
+export interface SequenceStep {
+  id?: string;
+  sequence_id?: string;
+  step_order: number;
+  day_offset: number;
+  minute_offset?: number | null;
+  channel: 'email' | 'whatsapp';
+  template_id?: string | null;
+  subject?: string;
+  body_content: string;
+}
+
+export interface Sequence {
+  id: string;
+  name: string;
+  status: 'active' | 'paused' | 'draft' | 'archived';
+  daily_limit: number;
+  send_window_start: string;
+  send_window_end: string;
+  timezone: string;
+  total_enrolled?: number;
+  active_enrolled?: number;
+  replied_count?: number;
+  completed_count?: number;
+  messages_sent?: number;
+  total_steps?: number;
+  steps?: SequenceStep[];
+  created_at?: string;
+}
+
+export interface SequenceSender {
+  id: string;
+  email: string;
+  display_name: string;
+  daily_cap: number;
+  sent_today: number;
+  is_active: boolean;
+}
+
+export interface EnrollmentItem {
+  id: string;
+  lead_id: string;
+  sequence_id: string;
+  lead_name: string;
+  lead_phone: string;
+  lead_email: string;
+  company_name: string;
+  lead_stage: string;
+  current_step: number;
+  status: 'active' | 'paused' | 'replied' | 'completed' | 'stopped' | 'failed';
+  next_run_at: string;
+  retry_count: number;
+  last_error?: string;
+}
+
+export interface SequenceLogItem {
+  id: string;
+  lead_name: string;
+  company_name: string;
+  channel: 'email' | 'whatsapp';
+  sender_email?: string;
+  recipient: string;
+  subject?: string;
+  body_content: string;
+  status: string;
+  provider_message_id?: string;
+  error?: string;
+  sent_at: string;
+}
+
 export interface TaskItem {
   id: string;
   title: string;
@@ -403,5 +473,105 @@ export class CrmService {
    */
   sendOutboundMessage(leadId: string, channel: string = 'whatsapp', message: string = ''): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/suppression/outbound/send`, { lead_id: leadId, channel, message });
+  }
+
+  // =========================================================================
+  // MULTI-STEP SEQUENCE (DRIP) ENGINE METHODS
+  // =========================================================================
+
+  getSequences(): Observable<Sequence[]> {
+    return this.http.get<any>(`${this.apiUrl}/sequences`).pipe(
+      map(res => (res && res.sequences) ? res.sequences : []),
+      catchError(() => of([]))
+    );
+  }
+
+  getSequence(id: string): Observable<Sequence | null> {
+    return this.http.get<any>(`${this.apiUrl}/sequences/${id}`).pipe(
+      map(res => (res && res.sequence) ? res.sequence : null),
+      catchError(() => of(null))
+    );
+  }
+
+  createSequence(data: Partial<Sequence>): Observable<Sequence> {
+    return this.http.post<any>(`${this.apiUrl}/sequences`, data).pipe(
+      map(res => res.sequence)
+    );
+  }
+
+  updateSequence(id: string, data: Partial<Sequence>): Observable<Sequence> {
+    return this.http.put<any>(`${this.apiUrl}/sequences/${id}`, data).pipe(
+      map(res => res.sequence)
+    );
+  }
+
+  deleteSequence(id: string): Observable<boolean> {
+    return this.http.delete<any>(`${this.apiUrl}/sequences/${id}`).pipe(
+      map(res => !!(res && res.success)),
+      catchError(() => of(false))
+    );
+  }
+
+  addSequenceStep(sequenceId: string, step: SequenceStep): Observable<SequenceStep> {
+    return this.http.post<any>(`${this.apiUrl}/sequences/${sequenceId}/steps`, step).pipe(
+      map(res => res.step)
+    );
+  }
+
+  updateSequenceStep(sequenceId: string, stepId: string, step: Partial<SequenceStep>): Observable<SequenceStep> {
+    return this.http.put<any>(`${this.apiUrl}/sequences/${sequenceId}/steps/${stepId}`, step).pipe(
+      map(res => res.step)
+    );
+  }
+
+  deleteSequenceStep(sequenceId: string, stepId: string): Observable<boolean> {
+    return this.http.delete<any>(`${this.apiUrl}/sequences/${sequenceId}/steps/${stepId}`).pipe(
+      map(res => !!(res && res.success)),
+      catchError(() => of(false))
+    );
+  }
+
+  enrollInSequence(sequenceId: string, payload: { lead_id?: string; lead_ids?: string[]; immediate?: boolean }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/sequences/${sequenceId}/enroll`, payload);
+  }
+
+  getSequenceEnrollments(sequenceId: string, status?: string): Observable<EnrollmentItem[]> {
+    const params: any = {};
+    if (status) params.status = status;
+    return this.http.get<any>(`${this.apiUrl}/sequences/${sequenceId}/enrollments`, { params }).pipe(
+      map(res => (res && res.enrollments) ? res.enrollments : []),
+      catchError(() => of([]))
+    );
+  }
+
+  getSequenceLogs(sequenceId: string): Observable<SequenceLogItem[]> {
+    return this.http.get<any>(`${this.apiUrl}/sequences/${sequenceId}/logs`).pipe(
+      map(res => (res && res.logs) ? res.logs : []),
+      catchError(() => of([]))
+    );
+  }
+
+  getSequenceSenders(): Observable<SequenceSender[]> {
+    return this.http.get<any>(`${this.apiUrl}/sequences/senders/list`).pipe(
+      map(res => (res && res.senders) ? res.senders : []),
+      catchError(() => of([]))
+    );
+  }
+
+  addSequenceSender(sender: Partial<SequenceSender>): Observable<SequenceSender> {
+    return this.http.post<any>(`${this.apiUrl}/sequences/senders`, sender).pipe(
+      map(res => res.sender)
+    );
+  }
+
+  deleteSequenceSender(id: string): Observable<boolean> {
+    return this.http.delete<any>(`${this.apiUrl}/sequences/senders/${id}`).pipe(
+      map(res => !!(res && res.success)),
+      catchError(() => of(false))
+    );
+  }
+
+  triggerSequenceWorker(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/sequences/worker/trigger`, {});
   }
 }
