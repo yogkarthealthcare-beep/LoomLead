@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { CrmService, GooglePlaceResult } from '../../services/crm.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-google-maps-leads',
@@ -34,6 +35,7 @@ export class GoogleMapsLeadsComponent implements OnInit {
 
   constructor(
     private crmService: CrmService,
+    public authService: AuthService,
     private route: ActivatedRoute
   ) {}
 
@@ -58,6 +60,12 @@ export class GoogleMapsLeadsComponent implements OnInit {
   executeSearch(): void {
     const q = this.searchQuery.trim();
     if (!q) return;
+
+    // Demo Mode Gating - Prompt to Buy / Upgrade on search
+    if (this.authService.isDemo()) {
+      this.authService.triggerDemoLock('Live Google Maps Lead Extraction');
+      return;
+    }
 
     this.isLoading = true;
     this.importSuccessMessage = '';
@@ -115,6 +123,11 @@ export class GoogleMapsLeadsComponent implements OnInit {
   }
 
   importSelected(): void {
+    if (this.authService.isDemo()) {
+      this.authService.triggerDemoLock('Lead Ingestion to CRM Pipeline');
+      return;
+    }
+
     const toImport = this.filteredResults.filter(r => this.selectedPlaces.has(r.place_id));
     if (toImport.length === 0) return;
 

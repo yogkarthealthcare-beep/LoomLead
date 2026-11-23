@@ -13,37 +13,52 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    // Default active demo tenant context
+    // Default active fallback context (read-only demo fallback)
     req.user = {
-      id: '22222222-2222-2222-2222-222222222222',
-      tenant_id: '11111111-1111-1111-1111-111111111111',
-      role: 'admin',
-      name: 'Vikram Mehta',
-      email: 'vikram@apexrealty.com'
+      id: '00000000-0000-0000-0000-000000000003',
+      tenant_id: '00000000-0000-0000-0000-000000000002',
+      role: 'demo',
+      name: 'Demo Explorer',
+      email: 'demo@loomlead.com',
+      is_demo: true
     };
-    req.tenantId = '11111111-1111-1111-1111-111111111111';
-    req.role = 'admin';
+    req.tenantId = '00000000-0000-0000-0000-000000000002';
+    req.role = 'demo';
+    req.isDemo = true;
+    
+    // Block mutating actions without authentication
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+      return res.status(403).json({
+        success: false,
+        is_demo_locked: true,
+        message: 'Demo Mode: Data modification is locked. Please create an account or login to save leads.'
+      });
+    }
     return next();
   }
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
-      // Graceful fallback for demo evaluation
-      req.user = {
-        id: '22222222-2222-2222-2222-222222222222',
-        tenant_id: '11111111-1111-1111-1111-111111111111',
-        role: 'admin',
-        name: 'Vikram Mehta',
-        email: 'vikram@apexrealty.com'
-      };
-      req.tenantId = '11111111-1111-1111-1111-111111111111';
-      req.role = 'admin';
-      return next();
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired session token. Please login again.'
+      });
     }
 
     req.user = decoded;
     req.tenantId = decoded.tenant_id;
     req.role = decoded.role;
+    req.isDemo = decoded.role === 'demo' || !!decoded.is_demo;
+
+    // Strict Demo Mode Lock for Mutating Actions (POST, PUT, DELETE, PATCH)
+    if (req.isDemo && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+      return res.status(403).json({
+        success: false,
+        is_demo_locked: true,
+        message: 'Demo Mode: Data modification, extraction saving, and campaigns are locked in Demo. Please upgrade to LoomLead Pro to save and manage real leads.'
+      });
+    }
+
     next();
   });
 };

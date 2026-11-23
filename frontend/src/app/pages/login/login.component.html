@@ -1,0 +1,248 @@
+<div class="min-vh-100 d-flex flex-column justify-content-center py-4 px-3" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);">
+  <div class="container" style="max-width: 480px;">
+    
+    <!-- Brand Logo Header -->
+    <div class="text-center mb-4">
+      <div class="d-inline-flex align-items-center gap-2 mb-2">
+        <img src="assets/logo-icon.png" alt="LoomLead" style="width: 36px; height: 36px; object-fit: contain;">
+        <span class="fw-bold tracking-tight text-white fs-3" style="letter-spacing: -0.02em;">
+          loom<span style="color: #f97316;">Lead</span>
+        </span>
+        <span class="badge bg-primary px-2 py-1 rounded-pill" style="font-size: 0.65rem;">SAAS</span>
+      </div>
+      <p class="text-slate-300 small mb-0" style="color: #cbd5e1; font-size: 0.85rem;">
+        B2B Lead Generation, Google Maps Extraction & Sales CRM
+      </p>
+    </div>
+
+    <!-- Main Auth Card -->
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden" style="background: #ffffff;">
+      <!-- Top Colorful Accent Bar -->
+      <div style="height: 4px; background: linear-gradient(90deg, #2563eb 0%, #7c3aed 50%, #f97316 100%);"></div>
+
+      <div class="card-body p-4">
+        <!-- Form Header -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h5 class="fw-bold mb-1 text-dark" style="font-size: 1.15rem;">
+              {{ isRegisterMode ? 'Create Your Account' : 'Welcome Back' }}
+            </h5>
+            <span class="text-muted" style="font-size: 0.76rem;">
+              {{ isRegisterMode ? 'Start 100% free with your dedicated CRM workspace' : 'Sign in to access your leads and pipelines' }}
+            </span>
+          </div>
+          <!-- Mode Pill Badge -->
+          <span class="badge rounded-pill" [class.bg-primary-subtle]="!isRegisterMode" [class.text-primary]="!isRegisterMode" [class.bg-success-subtle]="isRegisterMode" [class.text-success]="isRegisterMode" style="font-size: 0.68rem;">
+            {{ isRegisterMode ? 'New Client' : 'Sign In' }}
+          </span>
+        </div>
+
+        <!-- Alerts -->
+        <div *ngIf="errorMessage" class="alert alert-danger py-2 px-3 mb-3 d-flex align-items-center gap-2" style="font-size: 0.78rem;">
+          <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+          <div>{{ errorMessage }}</div>
+        </div>
+
+        <div *ngIf="successMessage" class="alert alert-success py-2 px-3 mb-3 d-flex align-items-center gap-2" style="font-size: 0.78rem;">
+          <i class="bi bi-check-circle-fill flex-shrink-0"></i>
+          <div>{{ successMessage }}</div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 1. LOGIN FORM                                  -->
+        <!-- ============================================== -->
+        <form *ngIf="!isRegisterMode" (ngSubmit)="onLogin()">
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-dark mb-1" style="font-size: 0.76rem;">Email Address</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+              <input 
+                type="email" 
+                class="form-control border-start-0" 
+                style="height: 36px; font-size: 0.82rem;" 
+                placeholder="e.g. rahul@company.com" 
+                [(ngModel)]="loginData.email" 
+                name="loginEmail" 
+                required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <label class="form-label fw-semibold text-dark mb-0" style="font-size: 0.76rem;">Password</label>
+              <a href="javascript:void(0)" class="text-decoration-none text-muted" style="font-size: 0.7rem;">Forgot?</a>
+            </div>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+              <input 
+                type="password" 
+                class="form-control border-start-0" 
+                style="height: 36px; font-size: 0.82rem;" 
+                placeholder="Enter your password" 
+                [(ngModel)]="loginData.password" 
+                name="loginPassword" 
+                required>
+            </div>
+          </div>
+
+          <!-- Submit Login -->
+          <button 
+            type="submit" 
+            class="btn btn-gradient-primary w-100 fw-bold py-2 rounded-3 shadow-sm mb-3" 
+            style="font-size: 0.85rem;" 
+            [disabled]="isLoading">
+            <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!isLoading" class="bi bi-box-arrow-in-right me-1"></i>
+            {{ isLoading ? 'Signing In...' : 'Sign In to Workspace' }}
+          </button>
+        </form>
+
+        <!-- ============================================== -->
+        <!-- 2. REGISTER FORM                               -->
+        <!-- ============================================== -->
+        <form *ngIf="isRegisterMode" (ngSubmit)="onRegister()">
+          <div class="row g-2 mb-2">
+            <div class="col-12 col-sm-6">
+              <label class="form-label fw-semibold text-dark mb-1" style="font-size: 0.74rem;">Full Name *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                style="height: 34px; font-size: 0.8rem;" 
+                placeholder="e.g. Rahul Sharma" 
+                [(ngModel)]="registerData.name" 
+                name="regName" 
+                required>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label fw-semibold text-dark mb-1" style="font-size: 0.74rem;">Company / Agency *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                style="height: 34px; font-size: 0.8rem;" 
+                placeholder="e.g. NextGen Ventures" 
+                [(ngModel)]="registerData.company_name" 
+                name="regCompany" 
+                required>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label fw-semibold text-dark mb-1" style="font-size: 0.74rem;">Work Email *</label>
+            <input 
+              type="email" 
+              class="form-control" 
+              style="height: 34px; font-size: 0.8rem;" 
+              placeholder="e.g. rahul@nextgen.com" 
+              [(ngModel)]="registerData.email" 
+              name="regEmail" 
+              required>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-12 col-sm-6">
+              <label class="form-label fw-semibold text-dark mb-1" style="font-size: 0.74rem;">Phone / WhatsApp</label>
+              <input 
+                type="tel" 
+                class="form-control" 
+                style="height: 34px; font-size: 0.8rem;" 
+                placeholder="+91 98765 43210" 
+                [(ngModel)]="registerData.phone" 
+                name="regPhone">
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label fw-semibold text-dark mb-1" style="font-size: 0.74rem;">Industry</label>
+              <select class="form-select" style="height: 34px; font-size: 0.76rem;" [(ngModel)]="registerData.industry" name="regIndustry">
+                <option *ngFor="let ind of industries" [value]="ind">{{ ind }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-dark mb-1" style="font-size: 0.74rem;">Password (Min 6 chars) *</label>
+            <input 
+              type="password" 
+              class="form-control" 
+              style="height: 34px; font-size: 0.8rem;" 
+              placeholder="Create a strong password" 
+              [(ngModel)]="registerData.password" 
+              name="regPassword" 
+              required>
+          </div>
+
+          <!-- Submit Register -->
+          <button 
+            type="submit" 
+            class="btn btn-gradient-emerald w-100 fw-bold py-2 rounded-3 shadow-sm mb-3" 
+            style="font-size: 0.85rem;" 
+            [disabled]="isLoading">
+            <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!isLoading" class="bi bi-rocket-takeoff-fill me-1"></i>
+            {{ isLoading ? 'Creating Workspace...' : 'Create Account & Start Free' }}
+          </button>
+        </form>
+
+        <!-- Toggle Switch Between Login and Register -->
+        <div class="text-center pt-2 border-top">
+          <span class="text-muted" style="font-size: 0.78rem;">
+            {{ isRegisterMode ? 'Already have a registered account?' : "Don't have an account yet?" }}
+          </span>
+          <button 
+            type="button" 
+            class="btn btn-link text-primary fw-bold p-0 ms-1 text-decoration-none" 
+            style="font-size: 0.78rem;" 
+            (click)="toggleMode()">
+            {{ isRegisterMode ? 'Sign In Here' : 'Register / Create Account' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 3. INTERACTIVE DEMO MODE CARD (Prominent)       -->
+    <!-- ============================================== -->
+    <div class="card border-0 shadow-lg rounded-4 mt-3 card-accent-indigo" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);">
+      <div class="card-body p-3 text-center">
+        <div class="d-inline-flex align-items-center gap-1 text-indigo fw-bold text-uppercase mb-1" style="font-size: 0.72rem; color: #4f46e5; letter-spacing: 0.05em;">
+          <i class="bi bi-eye-fill"></i>
+          <span>Instant UI & Feature Preview</span>
+        </div>
+        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.92rem;">
+          Want to see how LoomLead works first?
+        </h6>
+        <p class="text-muted small mb-2" style="font-size: 0.74rem;">
+          Explore all CRM pipelines, Google Maps leads finder, drip sequences, and lead scoring in a live interactive sandbox (read-only).
+        </p>
+
+        <!-- Big Demo Access Button -->
+        <button 
+          type="button" 
+          class="btn btn-gradient-indigo w-100 fw-bold py-2 rounded-3 shadow-sm" 
+          style="font-size: 0.85rem;" 
+          (click)="onTryDemo()" 
+          [disabled]="isDemoLoading">
+          <span *ngIf="isDemoLoading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!isDemoLoading" class="bi bi-play-circle-fill me-1"></i>
+          {{ isDemoLoading ? 'Launching Demo...' : '⚡ Explore Live Demo (Try Demo)' }}
+        </button>
+
+        <div class="mt-2 text-muted" style="font-size: 0.68rem;">
+          <i class="bi bi-shield-check text-success me-1"></i> No registration or credit card needed • Limited read-only mode
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Seed Logins Helper for Testing -->
+    <div class="mt-3 text-center">
+      <div class="text-white-50 small mb-1" style="font-size: 0.7rem;">Quick Login Credentials (Click to Fill):</div>
+      <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <button type="button" class="btn btn-sm btn-dark text-slate-300 border border-secondary border-opacity-50 py-0 px-2 rounded-pill" style="font-size: 0.68rem;" (click)="fillQuickLogin('vikram@apexrealty.com')">
+          👤 Client Admin: vikram&#64;apexrealty.com
+        </button>
+        <button type="button" class="btn btn-sm btn-dark text-slate-300 border border-secondary border-opacity-50 py-0 px-2 rounded-pill" style="font-size: 0.68rem;" (click)="fillQuickLogin('admin@loomlead.com')">
+          🛡️ Super Admin: admin&#64;loomlead.com
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

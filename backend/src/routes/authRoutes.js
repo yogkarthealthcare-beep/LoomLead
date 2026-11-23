@@ -178,6 +178,73 @@ router.post('/register', async (req, res) => {
 });
 
 /**
+ * Explore Live Demo Session
+ * Issues a limited preview JWT token with role: 'demo'
+ */
+router.post('/demo', async (req, res) => {
+  try {
+    const demoUserRes = await db.query(
+      `SELECT u.id, u.tenant_id, u.name, u.email, u.role,
+              t.company_name, t.slug, t.industry, t.currency
+       FROM users u
+       JOIN tenants t ON u.tenant_id = t.id
+       WHERE u.role = 'demo' LIMIT 1`
+    );
+
+    let user;
+    if (demoUserRes.rows.length > 0) {
+      user = demoUserRes.rows[0];
+    } else {
+      user = {
+        id: '00000000-0000-0000-0000-000000000003',
+        tenant_id: '00000000-0000-0000-0000-000000000002',
+        name: 'Demo Explorer',
+        email: 'demo@loomlead.com',
+        role: 'demo',
+        company_name: 'LoomLead Interactive Demo',
+        industry: 'B2B SaaS',
+        currency: 'INR'
+      };
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        tenant_id: user.tenant_id,
+        name: user.name,
+        email: user.email,
+        role: 'demo',
+        is_demo: true
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Demo session active! Explore features in preview mode.',
+      token,
+      is_demo: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: 'demo',
+        is_demo: true,
+        tenant_id: user.tenant_id,
+        company: user.company_name,
+        plan: 'demo',
+        plan_name: 'Interactive Demo Mode',
+        subscription_status: 'demo'
+      }
+    });
+  } catch (err) {
+    console.error('Demo auth error:', err);
+    res.status(500).json({ success: false, message: 'Could not initialize demo session.' });
+  }
+});
+
+/**
  * Get Current User Profile & Company
  */
 router.get('/me', authenticateToken, async (req, res) => {

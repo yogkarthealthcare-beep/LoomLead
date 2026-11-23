@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CrmService } from './services/crm.service';
+import { AuthService } from './services/auth.service';
 
 interface ChatMessage {
   sender: 'user' | 'agent';
@@ -39,10 +40,18 @@ export class AppComponent {
     }
   ];
 
-  constructor(private crmService: CrmService, private router: Router) {
+  constructor(
+    private crmService: CrmService, 
+    public authService: AuthService,
+    public router: Router
+  ) {
     this.router.events.subscribe(() => {
       this.closeSidebar();
     });
+  }
+
+  isLoginPage(): boolean {
+    return this.router.url.includes('/login');
   }
 
   toggleSidebar(): void {
@@ -61,6 +70,10 @@ export class AppComponent {
 
   onGlobalSearch(): void {
     if (!this.globalSearchText.trim()) return;
+    if (this.authService.isDemo()) {
+      this.authService.triggerDemoLock('Global Google Maps Search');
+      return;
+    }
     this.router.navigate(['/google-maps-leads'], { queryParams: { q: this.globalSearchText.trim() } });
     this.globalSearchText = '';
   }
@@ -100,5 +113,9 @@ export class AppComponent {
         }
       }
     });
+  }
+
+  logout(): void {
+    this.authService.logout();
   }
 }

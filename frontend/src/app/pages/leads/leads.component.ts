@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CrmService, Lead } from '../../services/crm.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-leads',
@@ -58,7 +59,10 @@ export class LeadsComponent implements OnInit {
   showUpgradeModal: boolean = false;
   lockedFeatureTitle: string = '';
 
-  constructor(private crmService: CrmService) {}
+  constructor(
+    private crmService: CrmService,
+    public authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadLeads();
@@ -189,6 +193,10 @@ export class LeadsComponent implements OnInit {
   }
 
   openAddLeadModal(): void {
+    if (this.authService.isDemo()) {
+      this.authService.triggerDemoLock('Manual Lead Creation');
+      return;
+    }
     this.newLead = {
       name: '',
       phone: '',
@@ -203,6 +211,10 @@ export class LeadsComponent implements OnInit {
   }
 
   saveLead(): void {
+    if (this.authService.isDemo()) {
+      this.authService.triggerDemoLock('Lead Saving');
+      return;
+    }
     if (!this.newLead.name || !this.newLead.phone) return;
     this.crmService.addLead(this.newLead).subscribe(() => {
       this.showAddModal = false;

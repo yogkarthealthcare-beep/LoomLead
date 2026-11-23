@@ -45,6 +45,8 @@ router.get('/tenants', async (req, res) => {
   const { search, status } = req.query;
   try {
     let query = `SELECT t.*, p.name as plan_name, p.code as plan_code, s.status as subscription_status, s.expires_at,
+                        COALESCE((SELECT name FROM users u WHERE u.tenant_id = t.id ORDER BY u.created_at ASC LIMIT 1), 'Account Admin') as owner_name,
+                        COALESCE((SELECT email FROM users u WHERE u.tenant_id = t.id ORDER BY u.created_at ASC LIMIT 1), t.email) as owner_email,
                         (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id) as user_count,
                         (SELECT COUNT(*) FROM leads l WHERE l.tenant_id = t.id) as lead_count
                  FROM tenants t
