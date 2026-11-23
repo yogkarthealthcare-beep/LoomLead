@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/authMiddleware');
+const suppressionService = require('../services/suppressionService');
 
 // Get All Call Logs for Tenant or Specific Lead
 router.get('/', authenticateToken, async (req, res) => {
@@ -40,6 +41,28 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 
   try {
+    // Check DND / Suppression eligibility on outbound calls
+    if (direction === 'outbound') {
+      const leadRes = await db.query(
+        `SELECT * FROM leads WHERE id = $1 AND tenant_id = $2 AND is_deleted = FALSE`,
+        [lead_id, req.tenantId]
+      );
+
+      if (leadRes.rows.length > 0) {
+        const lead = leadRes.rows[0];
+        const contactCheck = await suppressionService.canContact(req.tenantId, lead, 'call');
+        if (!contactCheck.allowed) {
+          return res.status(422).json({
+            success: false,
+            code: 'DND_SUPPRESSED',
+            message: contactCheck.message,
+            reason: contactCheck.reason,
+            prohibited_channel: 'call'
+          });
+        }
+      }
+    }
+
     const insertRes = await db.query(
       `INSERT INTO call_logs (tenant_id, lead_id, user_id, direction, duration_seconds, outcome, notes, recording_url)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

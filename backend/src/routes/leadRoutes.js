@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/authMiddleware');
 const { checkPlanLimit } = require('../middleware/planGatingMiddleware');
+const hygieneService = require('../services/hygieneService');
+const suppressionService = require('../services/suppressionService');
 
 // Get All Leads with Filters, Search, Sort & Pagination
 router.get('/', authenticateToken, async (req, res) => {
@@ -10,10 +12,15 @@ router.get('/', authenticateToken, async (req, res) => {
   const offset = (page - 1) * limit;
 
   try {
-    let query = `SELECT l.*, ps.name as stage_name, ps.color_hex as stage_color, u.name as assigned_to_name
+    let query = `SELECT l.*, ps.name as stage_name, ps.color_hex as stage_color, u.name as assigned_to_name,
+                        CASE WHEN s.id IS NOT NULL THEN TRUE ELSE FALSE END as is_dnd,
+                        s.reason as dnd_reason
                  FROM leads l
                  LEFT JOIN pipeline_stages ps ON l.stage_id = ps.id
                  LEFT JOIN users u ON l.assigned_to_user_id = u.id
+                 LEFT JOIN suppression_list s ON s.tenant_id = l.tenant_id 
+                   AND ((s.type = 'phone' AND (s.value = l.normalized_phone OR s.value = l.phone)) 
+                        OR (s.type = 'email' AND l.email IS NOT NULL AND s.value = LOWER(l.email)))
                  WHERE l.tenant_id = $1 AND l.is_deleted = FALSE`;
     const params = [req.tenantId];
 
@@ -74,35 +81,37 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Create New Lead Manually
+// Create New Lead Manually (with Deduplication & Normalization)
 router.post('/', authenticateToken, async (req, res) => {
-  const { name, phone, email, company_name, category, source, status, score, budget_value, notes } = req.body;
+  const { name, phone, email, company_name, category, source, status, score, budget_value, notes, website } = req.body;
   if (!name || !phone) {
     return res.status(400).json({ success: false, message: 'Name and phone are required.' });
   }
 
   try {
-    const insertRes = await db.query(
-      `INSERT INTO leads 
-       (tenant_id, name, phone, email, company_name, category, source, status, score, budget_value, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       RETURNING *`,
-      [
-        req.tenantId,
-        name,
-        phone,
-        email || null,
-        company_name || name,
-        category || 'Business & Commercial',
-        source || 'Manual Entry',
-        status || 'New',
-        score || 'Warm',
-        budget_value || 0,
-        notes || null
-      ]
-    );
+    const leadData = {
+      name,
+      phone,
+      email: email || null,
+      company_name: company_name || name,
+      category: category || 'Business & Commercial',
+      source: source || 'Manual Entry',
+      status: status || 'New',
+      score: score || 'Warm',
+      budget_value: budget_value || 0,
+      notes: notes || null,
+      website: website || null
+    };
 
-    res.json({ success: true, lead: insertRes.rows[0], message: 'Lead added successfully.' });
+    const result = await hygieneService.upsertLead(db, req.tenantId, leadData, null, req.user.id);
+
+    res.json({
+      success: true,
+      lead: result.lead,
+      isDuplicate: result.isDuplicate,
+      merged: result.merged,
+      message: result.merged ? 'Existing lead found: enriched with new details without duplication.' : 'Lead added successfully.'
+    });
   } catch (err) {
     console.error('Lead create error:', err.message);
     res.status(500).json({ success: false, message: err.message });

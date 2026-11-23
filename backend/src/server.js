@@ -13,6 +13,7 @@ const aiAgentRoutes = require('./routes/aiAgentRoutes');
 const importExportRoutes = require('./routes/importExportRoutes');
 const superAdminRoutes = require('./routes/superAdminRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const suppressionRoutes = require('./routes/suppressionRoutes');
 const { getDashboardStats } = require('./controllers/dashboardController');
 
 const app = express();
@@ -65,6 +66,10 @@ app.use('/api/v1/google-maps', googleMapsRoutes);
 
 // In-App Autonomous AI Agent Copilot
 app.use('/api/v1/ai-agent', aiAgentRoutes);
+
+// Suppression / DND & Hygiene Management
+app.use('/api/v1/suppression', suppressionRoutes);
+app.use('/api/v1/webhooks', suppressionRoutes); // Convenience alias for webhooks (e.g. /api/v1/webhooks/whatsapp)
 
 // Import & Export (PDF, Excel, Word, CSV)
 app.use('/api/v1/import-export', importExportRoutes);

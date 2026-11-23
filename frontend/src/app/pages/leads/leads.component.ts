@@ -41,6 +41,7 @@ export class LeadsComponent implements OnInit {
   callDuration: number = 180;
   callNotes: string = '';
   callSuccessToast: string = '';
+  dndWarningToast: string = '';
 
   // Plan Gating Modal state
   showUpgradeModal: boolean = false;
@@ -134,11 +135,22 @@ export class LeadsComponent implements OnInit {
   }
 
   openCallModal(lead: Lead): void {
+    if (lead.is_dnd) {
+      this.alertDnd(lead);
+      return;
+    }
     this.activeLeadForCall = lead;
     this.callOutcome = 'connected';
     this.callDuration = 120;
     this.callNotes = '';
     this.showCallModal = true;
+  }
+
+  alertDnd(lead: Lead): void {
+    this.dndWarningToast = `🛑 DND SUPPRESSED: Cannot contact "${lead.name}" (${lead.phone}). Reason: ${lead.dnd_reason || 'Client is in Do-Not-Disturb suppression list'}.`;
+    setTimeout(() => {
+      this.dndWarningToast = '';
+    }, 6000);
   }
 
   submitCallLog(): void {

@@ -28,6 +28,13 @@
     <button type="button" class="btn-close py-2" (click)="callSuccessToast = ''"></button>
   </div>
 
+  <!-- DND Suppression Block Alert Toast -->
+  <div *ngIf="dndWarningToast" class="alert alert-danger alert-dismissible fade show shadow-sm border-0 d-flex align-items-center gap-2 py-2 px-3 mb-2" style="font-size: 0.78rem;">
+    <i class="bi bi-slash-circle-fill fs-6"></i>
+    <div class="fw-semibold">{{ dndWarningToast }}</div>
+    <button type="button" class="btn-close py-2" (click)="dndWarningToast = ''"></button>
+  </div>
+
   <!-- Compact Live Search & Filter Bar -->
   <div class="card border-0 shadow-sm mb-3">
     <div class="card-body p-2">
@@ -138,7 +145,12 @@
               <small class="text-muted" style="font-size: 0.68rem;">{{ lead.email || 'No email' }}</small>
             </td>
             <td>
-              <span class="fw-semibold font-monospace" style="font-size: 0.78rem;">{{ lead.phone }}</span>
+              <div class="d-flex align-items-center gap-1">
+                <span class="fw-semibold font-monospace" style="font-size: 0.78rem;">{{ lead.phone }}</span>
+                <span *ngIf="lead.is_dnd" class="badge bg-danger text-white border border-danger-subtle px-1 py-0" style="font-size: 0.62rem;" [title]="'Suppressed / DND: ' + (lead.dnd_reason || 'Do Not Disturb active')">
+                  <i class="bi bi-slash-circle me-1"></i>DND
+                </span>
+              </div>
             </td>
             <td>
               <div class="text-secondary fw-semibold" style="font-size: 0.76rem;">{{ lead.company_name }}</div>
@@ -187,13 +199,20 @@
             <td class="text-end">
               <div class="btn-group">
                 <!-- Log Call -->
-                <button class="btn btn-outline-primary btn-action-icon" (click)="openCallModal(lead)" title="Log Call Outcome">
-                  <i class="bi bi-telephone-fill"></i>
+                <button class="btn btn-outline-primary btn-action-icon" [class.opacity-50]="lead.is_dnd" (click)="openCallModal(lead)" [title]="lead.is_dnd ? 'DND Suppressed - Outbound Calls Blocked' : 'Log Call Outcome'">
+                  <i class="bi bi-telephone-fill" [class.text-danger]="lead.is_dnd"></i>
                 </button>
                 <!-- WhatsApp -->
-                <a [href]="'https://wa.me/' + lead.phone.replace(' ', '')" target="_blank" class="btn btn-outline-success btn-action-icon" title="WhatsApp Chat">
-                  <i class="bi bi-whatsapp"></i>
-                </a>
+                <ng-container *ngIf="!lead.is_dnd; else dndWaBtn">
+                  <a [href]="'https://wa.me/' + lead.phone.replace(' ', '')" target="_blank" class="btn btn-outline-success btn-action-icon" title="WhatsApp Chat">
+                    <i class="bi bi-whatsapp"></i>
+                  </a>
+                </ng-container>
+                <ng-template #dndWaBtn>
+                  <button class="btn btn-outline-secondary btn-action-icon opacity-50" (click)="alertDnd(lead)" title="DND Suppressed - Outbound WhatsApp Blocked">
+                    <i class="bi bi-slash-circle text-danger"></i>
+                  </button>
+                </ng-template>
                 <!-- Delete -->
                 <button class="btn btn-outline-danger btn-action-icon" (click)="deleteLead(lead.id)" title="Delete Lead">
                   <i class="bi bi-trash"></i>

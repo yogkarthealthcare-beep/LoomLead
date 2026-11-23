@@ -11,10 +11,22 @@ export interface Lead {
   company_name: string;
   category?: string;
   source: string;
+  sources?: string[];
   status: string;
   score: 'Hot' | 'Warm' | 'Cold';
   budget_value: number;
   next_followup_at: string;
+  created_at: string;
+  is_dnd?: boolean;
+  dnd_reason?: string;
+  last_seen_at?: string;
+}
+
+export interface SuppressionEntry {
+  id: string;
+  type: 'phone' | 'email';
+  value: string;
+  reason: 'stop_keyword' | 'unsubscribe' | 'manual' | 'bounce';
   created_at: string;
 }
 
@@ -83,7 +95,11 @@ export class CrmService {
             score: l.score || 'Warm',
             budget_value: parseFloat(l.budget_value) || 0,
             next_followup_at: l.next_followup_at || 'Not scheduled',
-            created_at: l.created_at ? l.created_at.split('T')[0] : ''
+            created_at: l.created_at ? l.created_at.split('T')[0] : '',
+            is_dnd: !!l.is_dnd,
+            dnd_reason: l.dnd_reason || '',
+            sources: Array.isArray(l.sources) ? l.sources : [l.source || 'Direct'],
+            last_seen_at: l.last_seen_at || ''
           }));
           return this.currentLeads;
         }
@@ -328,5 +344,64 @@ export class CrmService {
       message: `Aapka request mila: "${prompt}". Aap mujhse bol sakte hain:\n• "Hot leads dikhao"\n• "Google Maps se leads nikaalo"\n• "Client ko call karne ka task banao kal 3 baje"`,
       suggestions: ['Show Hot Leads', 'Find Leads on Google Maps', 'Open Leads']
     });
+  }
+
+  // =========================================================================
+  // SUPPRESSION / DND (DO NOT DISTURB) API METHODS
+  // =========================================================================
+
+  /**
+   * Fetch suppression list
+   */
+  getSuppressionList(search: string = '', type: string = 'All'): Observable<SuppressionEntry[]> {
+    return this.http.get<any>(`${this.apiUrl}/suppression`, {
+      params: { search, type }
+    }).pipe(
+      map(res => {
+        if (res && res.suppressionList && Array.isArray(res.suppressionList)) {
+          return res.suppressionList;
+        }
+        return [];
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * Add new manual/bounce suppression entry
+   */
+  addSuppression(type: 'phone' | 'email', value: string, reason: string = 'manual'): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/suppression`, { type, value, reason });
+  }
+
+  /**
+   * Remove entry from suppression list
+   */
+  removeSuppression(id: string): Observable<boolean> {
+    return this.http.delete<any>(`${this.apiUrl}/suppression/${id}`).pipe(
+      map(res => !!(res && res.success)),
+      catchError(() => of(false))
+    );
+  }
+
+  /**
+   * Check contact eligibility
+   */
+  canContact(leadId: string, channel: string = 'whatsapp'): Observable<{ allowed: boolean; message?: string; reason?: string }> {
+    return this.http.post<any>(`${this.apiUrl}/suppression/can-contact`, { lead_id: leadId, channel }).pipe(
+      map(res => ({
+        allowed: res && res.canContact,
+        message: res && res.details ? res.details.message : '',
+        reason: res && res.details ? res.details.reason : ''
+      })),
+      catchError(err => of({ allowed: false, message: err.error?.message || 'Contact verification failed' }))
+    );
+  }
+
+  /**
+   * Outbound send dispatch with canContact enforcement
+   */
+  sendOutboundMessage(leadId: string, channel: string = 'whatsapp', message: string = ''): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/suppression/outbound/send`, { lead_id: leadId, channel, message });
   }
 }

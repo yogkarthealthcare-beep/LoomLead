@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 const importExportService = require('../services/importExportService');
+const hygieneService = require('../services/hygieneService');
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/authMiddleware');
 const { checkPlanLimit } = require('../middleware/planGatingMiddleware');
@@ -36,6 +37,63 @@ router.post('/import', authenticateToken, checkPlanLimit('import_export'), uploa
   } catch (err) {
     console.error('File import parsing error:', err);
     res.status(500).json({ success: false, message: `Import error: ${err.message}` });
+  }
+});
+
+// Commit and save parsed rows into database with Deduplication & Normalization
+router.post('/import/commit', authenticateToken, checkPlanLimit('import_export'), async (req, res) => {
+  const { leads, stage_id } = req.body;
+  if (!Array.isArray(leads) || leads.length === 0) {
+    return res.status(400).json({ success: false, message: 'Leads array is required.' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    let createdCount = 0;
+    let mergedCount = 0;
+
+    for (const item of leads) {
+      if (!item.name && !item.phone && !item.FullName && !item.Mobile) continue;
+
+      const leadData = {
+        name: item.name || item.FullName || item.ClientName || 'New Lead',
+        phone: item.phone || item.Phone || item.Mobile || item.Contact || '',
+        email: item.email || item.Email || null,
+        company_name: item.company_name || item.Company || item.Business || item.name,
+        category: item.category || item.Category || 'Business & Commercial',
+        address: item.address || item.Address || null,
+        city: item.city || item.City || 'India',
+        source: item.source || 'File Import',
+        status: item.status || 'New',
+        score: item.score || 'Warm',
+        budget_value: parseFloat(item.budget_value || item.BudgetValue || 0) || 0,
+        notes: item.notes || item.Notes || null,
+        website: item.website || item.Website || null
+      };
+
+      const result = await hygieneService.upsertLead(client, req.tenantId, leadData, stage_id, req.user.id);
+      if (result.merged) {
+        mergedCount++;
+      } else {
+        createdCount++;
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({
+      success: true,
+      total_processed: leads.length,
+      created: createdCount,
+      merged: mergedCount,
+      message: `Import complete: ${createdCount} new leads created, ${mergedCount} duplicates merged and enriched.`
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Import commit error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  } finally {
+    client.release();
   }
 });
 

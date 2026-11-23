@@ -1,5 +1,6 @@
 const axios = require('axios');
 const db = require('../config/db');
+const hygieneService = require('./hygieneService');
 
 /**
  * Enterprise Service to search and scrape Google Maps places.
@@ -325,6 +326,7 @@ class GoogleMapsService {
 
   /**
    * Bulk import selected Google Maps businesses into the CRM Leads table
+   * Utilizes HygieneService to deduplicate, normalize and merge existing records
    */
   async bulkImportToLeads(tenantId, userId, placesList, defaultStageId) {
     const imported = [];
@@ -334,56 +336,47 @@ class GoogleMapsService {
       await client.query('BEGIN');
 
       for (const item of placesList) {
-        // Prevent duplicate phone insertion for this tenant
-        const dupCheck = await client.query(
-          `SELECT id FROM leads WHERE tenant_id = $1 AND phone = $2 LIMIT 1`,
-          [tenantId, item.phone]
+        const leadData = {
+          name: item.name,
+          phone: item.phone,
+          email: item.website ? `contact@${hygieneService.normalizeDomain(item.website)}` : null,
+          company_name: item.name,
+          website: item.website,
+          category: item.category || 'Business & Commercial',
+          address: item.address,
+          city: item.city || 'Default City',
+          source: 'Google Maps',
+          status: 'New',
+          score: 'Warm',
+          budget_value: 0,
+          notes: `Rating: ${item.rating || 0} (${item.user_ratings_total || 0} reviews). Website: ${item.website || 'N/A'}`
+        };
+
+        const upsertRes = await hygieneService.upsertLead(client, tenantId, leadData, defaultStageId, userId);
+
+        // Save reference in google_maps_leads cache table
+        await client.query(
+          `INSERT INTO google_maps_leads
+           (tenant_id, search_keyword, location_query, place_id, business_name, category, phone, formatted_address, city, rating, user_ratings_total, website_url, is_imported, imported_lead_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13)`,
+          [
+            tenantId,
+            item.search_keyword || 'Keyword',
+            item.city || 'City',
+            item.place_id,
+            item.name,
+            item.category || 'Business & Commercial',
+            item.phone,
+            item.address,
+            item.city,
+            item.rating || 0,
+            item.user_ratings_total || 0,
+            item.website,
+            upsertRes.lead.id
+          ]
         );
 
-        if (dupCheck.rows.length === 0) {
-          const insertRes = await client.query(
-            `INSERT INTO leads 
-             (tenant_id, name, phone, company_name, category, address, city, source, status, score, stage_id, assigned_to_user_id, notes)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'Google Maps', 'New', 'Warm', $8, $9, $10)
-             RETURNING id, name, phone, company_name, category`,
-            [
-              tenantId,
-              item.name,
-              item.phone,
-              item.name,
-              item.category || 'Business & Commercial',
-              item.address,
-              item.city || 'Default City',
-              defaultStageId || null,
-              userId || null,
-              `Rating: ${item.rating} (${item.user_ratings_total} reviews). Website: ${item.website || 'N/A'}`
-            ]
-          );
-
-          // Save reference in google_maps_leads cache table
-          await client.query(
-            `INSERT INTO google_maps_leads
-             (tenant_id, search_keyword, location_query, place_id, business_name, category, phone, formatted_address, city, rating, user_ratings_total, website_url, is_imported, imported_lead_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13)`,
-            [
-              tenantId,
-              item.search_keyword || 'Keyword',
-              item.city || 'City',
-              item.place_id,
-              item.name,
-              item.category || 'Business & Commercial',
-              item.phone,
-              item.address,
-              item.city,
-              item.rating || 0,
-              item.user_ratings_total || 0,
-              item.website,
-              insertRes.rows[0].id
-            ]
-          );
-
-          imported.push(insertRes.rows[0]);
-        }
+        imported.push(upsertRes.lead);
       }
 
       await client.query('COMMIT');
