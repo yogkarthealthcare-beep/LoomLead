@@ -49,6 +49,10 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  public get demoModalValue(): { isOpen: boolean; featureName: string } {
+    return this.demoModalSubject.value;
+  }
+
   public getToken(): string | null {
     return localStorage.getItem('loomlead_token');
   }

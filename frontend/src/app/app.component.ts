@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CrmService } from './services/crm.service';
-import { AuthService } from './services/auth.service';
+import { AuthService, UserSession } from './services/auth.service';
 
 interface ChatMessage {
   sender: 'user' | 'agent';
@@ -20,6 +20,10 @@ interface ChatMessage {
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
+  public authService: AuthService = inject(AuthService);
+  public router: Router = inject(Router);
+  public crmService: CrmService = inject(CrmService);
+
   public title: string = 'LoomLead CRM';
   public isSidebarOpen: boolean = false;
   public isAiChatOpen: boolean = false;
@@ -40,11 +44,7 @@ export class AppComponent {
     }
   ];
 
-  constructor(
-    private crmService: CrmService, 
-    public authService: AuthService,
-    public router: Router
-  ) {
+  constructor() {
     this.router.events.subscribe(() => {
       this.closeSidebar();
     });
@@ -53,8 +53,28 @@ export class AppComponent {
   /**
    * Checks if current active route is login / register
    */
-  public isLoginPage(): boolean {
+  public get isLoginPage(): boolean {
     return this.router.url.includes('/login');
+  }
+
+  public get currentUser(): UserSession | null {
+    return this.authService.currentUserValue;
+  }
+
+  public get isDemo(): boolean {
+    return this.authService.isDemo();
+  }
+
+  public get isSuperAdmin(): boolean {
+    return this.authService.isSuperAdmin();
+  }
+
+  public get demoModal(): { isOpen: boolean; featureName: string } {
+    return this.authService.demoModalValue;
+  }
+
+  public closeDemoLock(): void {
+    this.authService.closeDemoLock();
   }
 
   /**

@@ -1,5 +1,5 @@
 <!-- If on Login / Register page, render clean full-screen view -->
-<ng-container *ngIf="isLoginPage(); else appShell">
+<ng-container *ngIf="isLoginPage; else appShell">
   <router-outlet></router-outlet>
 </ng-container>
 
@@ -34,11 +34,11 @@
         <div
           class="bg-dark p-1 px-2 rounded text-slate-400 d-flex align-items-center justify-content-between border border-secondary border-opacity-25"
           style="font-size: 0.72rem;">
-          <span class="text-truncate" style="max-width: 140px;" [title]="(authService.currentUser$ | async)?.company || 'Workspace'">
-            <i class="bi bi-buildings me-1 text-primary"></i> {{ (authService.currentUser$ | async)?.company || 'My Workspace' }}
+          <span class="text-truncate" style="max-width: 140px;" [title]="currentUser?.company || 'Workspace'">
+            <i class="bi bi-buildings me-1 text-primary"></i> {{ currentUser?.company || 'My Workspace' }}
           </span>
           <span class="badge bg-primary-subtle text-primary text-uppercase" style="font-size: 0.58rem; padding: 1px 4px;">
-            {{ (authService.currentUser$ | async)?.plan || 'PRO' }}
+            {{ currentUser?.plan || 'PRO' }}
           </span>
         </div>
       </div>
@@ -85,7 +85,7 @@
         </li>
 
         <!-- Super Admin Panel - Visible ONLY to Super Admin -->
-        <li class="nav-item" *ngIf="authService.isSuperAdmin()">
+        <li class="nav-item" *ngIf="isSuperAdmin">
           <a routerLink="/super-admin" routerLinkActive="active" (click)="onNavLinkClick()" class="nav-link text-warning">
             <i class="bi bi-shield-lock-fill text-warning"></i> <span>Super Admin</span>
             <span class="badge bg-warning text-dark ms-auto" style="font-size: 0.58rem;">Admin</span>
@@ -99,14 +99,14 @@
           <div class="d-flex align-items-center gap-2 overflow-hidden">
             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
               style="width: 28px; height: 28px; font-size: 0.75rem;">
-              {{ ((authService.currentUser$ | async)?.name || 'LL').substring(0,2).toUpperCase() }}
+              {{ ((currentUser?.name || 'LL').substring(0,2)).toUpperCase() }}
             </div>
             <div class="overflow-hidden">
               <div class="text-white fw-semibold text-truncate" style="font-size: 0.75rem; line-height: 1.2;">
-                {{ (authService.currentUser$ | async)?.name || 'Vikram Mehta' }}
+                {{ currentUser?.name || 'Vikram Mehta' }}
               </div>
               <div class="text-muted text-truncate" style="font-size: 0.65rem;">
-                {{ (authService.currentUser$ | async)?.company || 'Apex Realty Group' }}
+                {{ currentUser?.company || 'Apex Realty Group' }}
               </div>
             </div>
           </div>
@@ -122,7 +122,7 @@
     <main class="flex-grow-1 min-vh-100 bg-light d-flex flex-column main-viewport">
       
       <!-- DEMO MODE STICKY TOP BANNER -->
-      <div *ngIf="authService.isDemo()" class="bg-gradient-indigo text-white py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2 shadow-sm" style="font-size: 0.78rem;">
+      <div *ngIf="isDemo" class="bg-gradient-indigo text-white py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2 shadow-sm" style="font-size: 0.78rem;">
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-warning text-dark fw-bold px-2 py-0">DEMO MODE</span>
           <span>Aap LoomLead Interactive Demo dekh rahe hain (Read-Only). Lead extraction, saving aur sequences locked hain.</span>
@@ -171,7 +171,7 @@
             <!-- Active Plan Badge -->
             <span class="badge plan-badge-medium px-2 py-1 rounded-pill" style="font-size: 0.68rem;">
               <i class="bi bi-star-fill text-warning me-1"></i>
-              <span>{{ (authService.currentUser$ | async)?.plan_name || 'Medium Pro' }}</span>
+              <span>{{ currentUser?.plan_name || 'Medium Pro' }}</span>
             </span>
 
             <!-- Notification Bell -->
@@ -266,7 +266,7 @@
   <!-- ======================================================== -->
   <!-- DEMO RESTRICTION GATING MODAL (Prompts User to Buy/Upgrade) -->
   <!-- ======================================================== -->
-  <div class="modal fade show d-block" *ngIf="(authService.demoModal$ | async)?.isOpen" tabindex="-1" style="background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 1090;">
+  <div class="modal fade show d-block" *ngIf="demoModal.isOpen" tabindex="-1" style="background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 1090;">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
       <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
         <!-- Colorful Top Accent Line -->
@@ -277,7 +277,7 @@
           </div>
           <h5 class="fw-bold text-dark mb-1">Feature Locked in Demo Mode</h5>
           <div class="badge bg-warning text-dark px-2 py-1 rounded-pill mb-2" style="font-size: 0.7rem;">
-            {{ (authService.demoModal$ | async)?.featureName || 'Live CRM Extraction' }}
+            {{ demoModal.featureName || 'Live CRM Extraction' }}
           </div>
           <p class="text-muted small mb-4" style="font-size: 0.78rem; line-height: 1.5;">
             Aap currently <strong>LoomLead Demo Workspace</strong> mein hain (Read-Only). 
@@ -285,13 +285,13 @@
           </p>
 
           <div class="d-flex flex-column gap-2">
-            <a routerLink="/pricing" (click)="authService.closeDemoLock()" class="btn btn-gradient-primary fw-bold py-2 rounded-3 shadow-sm" style="font-size: 0.85rem;">
+            <a routerLink="/pricing" (click)="closeDemoLock()" class="btn btn-gradient-primary fw-bold py-2 rounded-3 shadow-sm" style="font-size: 0.85rem;">
               <i class="bi bi-rocket-takeoff-fill me-1"></i> View Plans & Upgrade to Pro
             </a>
-            <button type="button" (click)="authService.closeDemoLock(); authService.logout()" class="btn btn-outline-secondary btn-sm py-2 rounded-3" style="font-size: 0.8rem;">
+            <button type="button" (click)="closeDemoLock(); logout()" class="btn btn-outline-secondary btn-sm py-2 rounded-3" style="font-size: 0.8rem;">
               <i class="bi bi-person-plus-fill me-1"></i> Register Free Account
             </button>
-            <button type="button" (click)="authService.closeDemoLock()" class="btn btn-link text-muted btn-sm text-decoration-none mt-1" style="font-size: 0.75rem;">
+            <button type="button" (click)="closeDemoLock()" class="btn btn-link text-muted btn-sm text-decoration-none mt-1" style="font-size: 0.75rem;">
               Continue Exploring Demo Preview
             </button>
           </div>
