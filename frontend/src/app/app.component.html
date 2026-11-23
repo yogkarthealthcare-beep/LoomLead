@@ -1,14 +1,23 @@
-<div class="d-flex">
+<div class="d-flex position-relative">
+  <!-- BACKDROP OVERLAY FOR MOBILE SIDEBAR -->
+  <div class="sidebar-backdrop d-lg-none" *ngIf="isSidebarOpen" (click)="closeSidebar()"></div>
+
   <!-- SLIM & COMPACT SIDEBAR -->
-  <aside class="crm-sidebar d-flex flex-column flex-shrink-0 shadow-sm">
-    <!-- Brand Logo -->
-    <a routerLink="/dashboard" class="d-flex align-items-center gap-2 mb-2 text-white text-decoration-none px-2 pt-1">
-      <img src="assets/logo-icon.png" alt="LoomLead" style="width: 26px; height: 26px; object-fit: contain;">
-      <div class="d-flex align-items-baseline gap-1">
-        <span class="fw-bold tracking-tight text-white" style="font-size: 1.05rem; letter-spacing: -0.02em;">loom<span style="color: #f97316;">Lead</span></span>
-        <span class="badge bg-primary" style="font-size: 0.58rem; padding: 1px 4px;">SAAS</span>
-      </div>
-    </a>
+  <aside class="crm-sidebar d-flex flex-column flex-shrink-0 shadow-sm" [class.show]="isSidebarOpen">
+    <!-- Brand Logo & Mobile Close Button Header -->
+    <div class="d-flex align-items-center justify-content-between mb-2 px-2 pt-1">
+      <a routerLink="/dashboard" (click)="onNavLinkClick()" class="d-flex align-items-center gap-2 text-white text-decoration-none">
+        <img src="assets/logo-icon.png" alt="LoomLead" style="width: 26px; height: 26px; object-fit: contain;">
+        <div class="d-flex align-items-baseline gap-1">
+          <span class="fw-bold tracking-tight text-white" style="font-size: 1.05rem; letter-spacing: -0.02em;">loom<span style="color: #f97316;">Lead</span></span>
+          <span class="badge bg-primary" style="font-size: 0.58rem; padding: 1px 4px;">SAAS</span>
+        </div>
+      </a>
+      <!-- Explicit Close Button on Mobile Sidebar -->
+      <button type="button" class="btn btn-sm btn-link text-white-50 p-1 d-lg-none" (click)="closeSidebar()" title="Close Navigation Menu">
+        <i class="bi bi-x-lg fs-5 text-white"></i>
+      </button>
+    </div>
 
     <!-- Industry Context Pill -->
     <div class="px-2 mb-2">
@@ -22,44 +31,44 @@
     <ul class="nav nav-pills flex-column mb-auto">
       <li class="sidebar-heading">Core CRM</li>
       <li class="nav-item">
-        <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+        <a routerLink="/dashboard" routerLinkActive="active" (click)="onNavLinkClick()" class="nav-link">
           <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
         </a>
       </li>
       <li class="nav-item">
-        <a routerLink="/leads" routerLinkActive="active" class="nav-link">
+        <a routerLink="/leads" routerLinkActive="active" (click)="onNavLinkClick()" class="nav-link">
           <i class="bi bi-people-fill"></i> <span>Leads & Contacts</span>
         </a>
       </li>
       <li class="nav-item">
-        <a routerLink="/google-maps-leads" routerLinkActive="active" class="nav-link">
+        <a routerLink="/google-maps-leads" routerLinkActive="active" (click)="onNavLinkClick()" class="nav-link">
           <i class="bi bi-geo-alt-fill text-danger"></i> <span>Google Maps Finder</span>
         </a>
       </li>
       <li class="nav-item">
-        <a routerLink="/sequences" routerLinkActive="active" class="nav-link">
+        <a routerLink="/sequences" routerLinkActive="active" (click)="onNavLinkClick()" class="nav-link">
           <i class="bi bi-diagram-3-fill text-info"></i> <span>Sequences (Drip)</span>
         </a>
       </li>
       <li class="nav-item">
-        <a routerLink="/suppression" routerLinkActive="active" class="nav-link">
+        <a routerLink="/suppression" routerLinkActive="active" (click)="onNavLinkClick()" class="nav-link">
           <i class="bi bi-slash-circle-fill text-danger"></i> <span>Suppression / DND</span>
         </a>
       </li>
       <li class="nav-item">
-        <a routerLink="/integrations" routerLinkActive="active" class="nav-link">
+        <a routerLink="/integrations" routerLinkActive="active" (click)="onNavLinkClick()" class="nav-link">
           <i class="bi bi-puzzle-fill text-warning"></i> <span>Integrations & API</span>
         </a>
       </li>
 
       <li class="sidebar-heading">Commercial & Billing</li>
       <li class="nav-item">
-        <a routerLink="/pricing" routerLinkActive="active" class="nav-link">
+        <a routerLink="/pricing" routerLinkActive="active" (click)="onNavLinkClick()" class="nav-link">
           <i class="bi bi-cash-stack"></i> <span>Plans & Billing</span>
         </a>
       </li>
       <li class="nav-item">
-        <a routerLink="/super-admin" routerLinkActive="active" class="nav-link">
+        <a routerLink="/super-admin" routerLinkActive="active" (click)="onNavLinkClick()" class="nav-link">
           <i class="bi bi-shield-lock-fill text-warning"></i> <span>Super Admin</span>
         </a>
       </li>
@@ -80,12 +89,23 @@
   </aside>
 
   <!-- MAIN VIEWPORT CONTENT -->
-  <main class="flex-grow-1 min-vh-100 bg-light d-flex flex-column">
+  <main class="flex-grow-1 min-vh-100 bg-light d-flex flex-column main-viewport">
     <!-- COMPACT TOP NAVBAR -->
     <nav class="crm-navbar navbar navbar-expand">
-      <div class="container-fluid p-0">
+      <div class="container-fluid p-0 d-flex align-items-center">
+        <!-- Hamburger Menu Button (Visible on Mobile / Tablet) -->
+        <button class="btn btn-light btn-sm me-2 shadow-sm d-lg-none py-1 px-2 border" (click)="toggleSidebar()" title="Toggle Navigation Menu">
+          <i class="bi bi-list fs-5"></i>
+        </button>
+
+        <!-- Mobile Brand Icon & Logo (Visible only on smaller screens) -->
+        <a routerLink="/dashboard" class="d-flex align-items-center gap-1 text-decoration-none me-2 d-lg-none">
+          <img src="assets/logo-icon.png" alt="LoomLead" style="width: 22px; height: 22px; object-fit: contain;">
+          <span class="fw-bold text-dark" style="font-size: 0.95rem;">loom<span style="color: #f97316;">Lead</span></span>
+        </a>
+
         <!-- Global Search Bar with direct Google Maps Leads Finder -->
-        <div class="input-group" style="max-width: 340px;">
+        <div class="input-group d-none d-sm-flex" style="max-width: 320px;">
           <span class="input-group-text bg-light border-0 py-1"><i class="bi bi-search text-muted" style="font-size: 0.75rem;"></i></span>
           <input 
             type="text" 

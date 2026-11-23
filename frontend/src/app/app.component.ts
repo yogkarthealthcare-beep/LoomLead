@@ -20,6 +20,7 @@ interface ChatMessage {
 })
 export class AppComponent {
   title = 'LoomLead CRM';
+  isSidebarOpen: boolean = false;
   isAiChatOpen: boolean = false;
   aiPromptInput: string = '';
   globalSearchText: string = '';
@@ -38,7 +39,25 @@ export class AppComponent {
     }
   ];
 
-  constructor(private crmService: CrmService, private router: Router) {}
+  constructor(private crmService: CrmService, private router: Router) {
+    this.router.events.subscribe(() => {
+      this.closeSidebar();
+    });
+  }
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }
+
+  onNavLinkClick(): void {
+    if (window.innerWidth < 992) {
+      this.closeSidebar();
+    }
+  }
 
   onGlobalSearch(): void {
     if (!this.globalSearchText.trim()) return;
