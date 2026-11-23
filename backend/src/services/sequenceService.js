@@ -473,6 +473,24 @@ class SequenceService {
       [tenantId, lead.id, channel, messageContent || 'Inbound reply received. Sequence paused.']
     );
 
+    // 6. Trigger Outgoing Webhook for email.replied or whatsapp.replied
+    try {
+      const webhookService = require('./webhookService');
+      const eventName = channel === 'email' ? 'email.replied' : 'whatsapp.replied';
+      webhookService.dispatch(tenantId, eventName, {
+        lead_id: lead.id,
+        lead_name: lead.name,
+        company_name: lead.company_name,
+        phone: lead.phone,
+        email: lead.email,
+        channel,
+        message: messageContent,
+        paused_enrollments: enrollmentIds
+      });
+    } catch (whErr) {
+      console.error('[SequenceService] Error dispatching webhook on reply:', whErr.message);
+    }
+
     return {
       handled: true,
       pausedEnrollments: enrollmentIds.length,

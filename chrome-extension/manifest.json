@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "LoomLead B2B Lead Capturer",
+  "version": "1.0.0",
+  "description": "Capture leads directly from LinkedIn, Google, and any website into LoomLead CRM with automatic deduplication.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Capture to LoomLead CRM"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ]
+}

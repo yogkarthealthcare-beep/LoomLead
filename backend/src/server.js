@@ -16,7 +16,10 @@ const taskRoutes = require('./routes/taskRoutes');
 const suppressionRoutes = require('./routes/suppressionRoutes');
 const sequenceRoutes = require('./routes/sequenceRoutes');
 const scoringRoutes = require('./routes/scoringRoutes');
+const publicApiRoutes = require('./routes/publicApiRoutes');
+const integrationRoutes = require('./routes/integrationRoutes');
 const sequenceWorker = require('./services/sequenceWorker');
+const webhookService = require('./services/webhookService');
 const { getDashboardStats } = require('./controllers/dashboardController');
 
 const app = express();
@@ -83,6 +86,19 @@ app.use('/api/v1/scoring', scoringRoutes);
 // Import & Export (PDF, Excel, Word, CSV)
 app.use('/api/v1/import-export', importExportRoutes);
 
+// Public REST API (v1) with API Key Authentication & Rate Limiting
+const publicApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Public API rate limit exceeded (120 req/min).' },
+});
+app.use('/api/v1/public', publicApiLimiter, publicApiRoutes);
+
+// Integrations (API Keys, Outgoing Webhooks, Delivery Logs)
+app.use('/api/v1/integrations', integrationRoutes);
+
 // Super Admin Platform Owner Portal
 app.use('/api/v1/superadmin', superAdminRoutes);
 
@@ -102,4 +118,11 @@ app.listen(PORT, () => {
 
   // Start Background Sequence Drip Worker
   sequenceWorker.start();
+
+  // Start Background Webhook Retry Worker (every 30 seconds)
+  setInterval(() => {
+    webhookService.processPendingRetries().catch(err => {
+      console.error('[WebhookRetryWorker] Error:', err.message);
+    });
+  }, 30000);
 });

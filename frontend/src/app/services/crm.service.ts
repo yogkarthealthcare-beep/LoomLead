@@ -35,6 +35,47 @@ export interface SuppressionEntry {
   created_at: string;
 }
 
+export interface ApiKeyItem {
+  id: string;
+  name: string;
+  key_prefix: string;
+  scopes: string[];
+  last_used_at?: string;
+  expires_at?: string;
+  is_revoked: boolean;
+  created_at: string;
+  raw_key?: string;
+}
+
+export interface WebhookSubscriptionItem {
+  id: string;
+  url: string;
+  events: string[];
+  secret: string;
+  is_active: boolean;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WebhookDeliveryItem {
+  id: string;
+  webhook_id: string;
+  event: string;
+  status: 'pending' | 'success' | 'failed';
+  status_code?: number;
+  attempt: number;
+  max_attempts: number;
+  next_retry_at?: string;
+  error_message?: string;
+  created_at: string;
+  delivered_at?: string;
+  webhook_url?: string;
+  webhook_description?: string;
+  payload?: any;
+  response_body?: string;
+}
+
 export interface SequenceStep {
   id?: string;
   sequence_id?: string;
@@ -619,5 +660,71 @@ export class CrmService {
 
   recordEngagement(leadId: string, type: 'whatsapp_reply' | 'email_open' | 'email_click'): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/scoring/events/engagement`, { lead_id: leadId, type });
+  }
+
+  // =========================================================================
+  // INTEGRATIONS & PUBLIC API / WEBHOOKS
+  // =========================================================================
+
+  getApiKeys(): Observable<ApiKeyItem[]> {
+    return this.http.get<any>(`${this.apiUrl}/integrations/keys`).pipe(
+      map(res => (res && res.keys) ? res.keys : []),
+      catchError(() => of([]))
+    );
+  }
+
+  createApiKey(name: string, scopes: string[]): Observable<ApiKeyItem> {
+    return this.http.post<any>(`${this.apiUrl}/integrations/keys`, { name, scopes }).pipe(
+      map(res => res.key)
+    );
+  }
+
+  revokeApiKey(id: string): Observable<boolean> {
+    return this.http.delete<any>(`${this.apiUrl}/integrations/keys/${id}`).pipe(
+      map(res => !!(res && res.success)),
+      catchError(() => of(false))
+    );
+  }
+
+  getWebhookSubscriptions(): Observable<WebhookSubscriptionItem[]> {
+    return this.http.get<any>(`${this.apiUrl}/integrations/webhooks`).pipe(
+      map(res => (res && res.subscriptions) ? res.subscriptions : []),
+      catchError(() => of([]))
+    );
+  }
+
+  createWebhookSubscription(sub: { url: string; events: string[]; description?: string }): Observable<WebhookSubscriptionItem> {
+    return this.http.post<any>(`${this.apiUrl}/integrations/webhooks`, sub).pipe(
+      map(res => res.subscription)
+    );
+  }
+
+  deleteWebhookSubscription(id: string): Observable<boolean> {
+    return this.http.delete<any>(`${this.apiUrl}/integrations/webhooks/${id}`).pipe(
+      map(res => !!(res && res.success)),
+      catchError(() => of(false))
+    );
+  }
+
+  toggleWebhookSubscription(id: string, isActive: boolean): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/integrations/webhooks/${id}/toggle`, { is_active: isActive });
+  }
+
+  getWebhookDeliveries(status?: string, event?: string): Observable<WebhookDeliveryItem[]> {
+    const params: any = {};
+    if (status && status !== 'All') params.status = status;
+    if (event && event !== 'All') params.event = event;
+    return this.http.get<any>(`${this.apiUrl}/integrations/deliveries`, { params }).pipe(
+      map(res => (res && res.deliveries) ? res.deliveries : []),
+      catchError(() => of([]))
+    );
+  }
+
+  resendWebhookDelivery(deliveryId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/integrations/deliveries/${deliveryId}/resend`, {});
+  }
+
+  triggerTestWebhook(event?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/integrations/webhooks/test`, { event });
   }
 }

@@ -177,6 +177,12 @@ router.put('/:id', authenticateToken, async (req, res) => {
   const { name, phone, email, company_name, category, score, status, stage_id, budget_value, notes, next_followup_at } = req.body;
 
   try {
+    const prevRes = await db.query(
+      `SELECT status FROM leads WHERE id = $1 AND tenant_id = $2 AND is_deleted = FALSE`,
+      [id, req.tenantId]
+    );
+    const previousStatus = prevRes.rows.length > 0 ? prevRes.rows[0].status : null;
+
     const updateRes = await db.query(
       `UPDATE leads 
        SET name = COALESCE($1, name),
@@ -200,10 +206,35 @@ router.put('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Lead not found.' });
     }
 
+    const updatedLead = updateRes.rows[0];
+
+    // Trigger Outgoing Webhooks if stage changed
+    if (previousStatus && status && previousStatus !== status) {
+      const webhookService = require('../services/webhookService');
+      webhookService.dispatch(req.tenantId, 'lead.stage_changed', {
+        lead_id: id,
+        previous_stage: previousStatus,
+        new_stage: updatedLead.status,
+        lead: updatedLead
+      });
+
+      if (updatedLead.status === 'Won') {
+        webhookService.dispatch(req.tenantId, 'lead.won', {
+          lead_id: id,
+          name: updatedLead.name,
+          company_name: updatedLead.company_name,
+          phone: updatedLead.phone,
+          email: updatedLead.email,
+          deal_value: updatedLead.budget_value,
+          won_at: new Date().toISOString()
+        });
+      }
+    }
+
     // Queue lead for asynchronous score recalculation on update
     scoringQueue.enqueue(req.tenantId, id);
 
-    res.json({ success: true, lead: updateRes.rows[0], message: 'Lead updated successfully.' });
+    res.json({ success: true, lead: updatedLead, message: 'Lead updated successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

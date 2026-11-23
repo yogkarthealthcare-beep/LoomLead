@@ -252,6 +252,13 @@ class HygieneService {
     const scoringQueue = require('./scoringQueue');
     scoringQueue.enqueue(tenantId, createdLead.id);
 
+    try {
+      const webhookService = require('./webhookService');
+      webhookService.dispatch(tenantId, 'lead.created', createdLead);
+    } catch (e) {
+      console.error('[HygieneService] Error dispatching lead.created webhook:', e.message);
+    }
+
     return {
       lead: createdLead,
       isDuplicate: false,

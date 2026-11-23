@@ -1,0 +1,562 @@
+<div class="container-fluid py-3 px-3">
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div>
+      <h5 class="fw-bold mb-0" style="font-size: 1.15rem;">
+        <i class="bi bi-puzzle-fill text-warning me-1"></i> Integrations, Public API & Outgoing Webhooks
+      </h5>
+      <span class="text-muted" style="font-size: 0.72rem;">
+        Connect LoomLead CRM to Zapier, Make.com, Pabbly, custom servers, and the Manifest V3 Chrome Extension.
+      </span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-outline-primary btn-sm shadow-sm" (click)="triggerTestWebhook()" style="font-size: 0.75rem;">
+        <i class="bi bi-broadcast me-1"></i> Send Test Webhook
+      </button>
+      <button class="btn btn-primary btn-sm shadow-sm" *ngIf="activeTab === 'api_keys'" (click)="openCreateKeyModal()" style="font-size: 0.75rem;">
+        <i class="bi bi-key-fill me-1"></i> Generate API Key
+      </button>
+      <button class="btn btn-success btn-sm shadow-sm" *ngIf="activeTab === 'webhooks'" (click)="openAddWebhookModal()" style="font-size: 0.75rem;">
+        <i class="bi bi-plus-lg me-1"></i> Add Webhook Endpoint
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div *ngIf="toastMessage" class="alert alert-{{ toastType }} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center gap-2 py-2 px-3 mb-3" style="font-size: 0.78rem;">
+    <i class="bi bi-info-circle-fill"></i>
+    <div>{{ toastMessage }}</div>
+    <button type="button" class="btn-close py-2" (click)="toastMessage = ''"></button>
+  </div>
+
+  <!-- Tab Navigation -->
+  <ul class="nav nav-pills mb-3 border-bottom pb-2">
+    <li class="nav-item">
+      <button class="nav-link py-1 px-3 fw-semibold" [class.active]="activeTab === 'api_keys'" (click)="activeTab = 'api_keys'" style="font-size: 0.8rem;">
+        <i class="bi bi-key me-1"></i> 1. Public API Keys ({{ apiKeys.length }})
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link py-1 px-3 fw-semibold" [class.active]="activeTab === 'webhooks'" (click)="activeTab = 'webhooks'" style="font-size: 0.8rem;">
+        <i class="bi bi-lightning-charge me-1"></i> 2. Outgoing Webhooks ({{ subscriptions.length }})
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link py-1 px-3 fw-semibold" [class.active]="activeTab === 'deliveries'" (click)="activeTab = 'deliveries'; loadDeliveries()" style="font-size: 0.8rem;">
+        <i class="bi bi-clock-history me-1"></i> 3. Delivery Logs & Retries
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link py-1 px-3 fw-semibold" [class.active]="activeTab === 'extension'" (click)="activeTab = 'extension'" style="font-size: 0.8rem;">
+        <i class="bi bi-browser-chrome me-1"></i> 4. Chrome Extension (Manifest V3)
+      </button>
+    </li>
+  </ul>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 1: API KEYS                                                           -->
+  <!-- ========================================================================= -->
+  <div *ngIf="activeTab === 'api_keys'">
+    <!-- API Info Banner -->
+    <div class="card border-0 shadow-sm mb-3 bg-light">
+      <div class="card-body p-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div>
+            <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+              <i class="bi bi-hdd-network-fill text-primary me-1"></i> LoomLead REST Public API (v1)
+            </div>
+            <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+              Base URL: <code class="bg-white px-2 py-0 rounded border text-dark">{{ publicApiBaseUrl }}</code>
+              <button class="btn btn-link btn-sm p-0 ms-1 text-decoration-none" (click)="copyApiUrl()" style="font-size: 0.72rem;">
+                <i class="bi" [class.bi-clipboard]="!copiedApiUrl" [class.bi-check-lg]="copiedApiUrl" [class.text-success]="copiedApiUrl"></i>
+                {{ copiedApiUrl ? 'Copied' : 'Copy' }}
+              </button>
+            </div>
+          </div>
+          <div class="text-muted small text-end" style="font-size: 0.72rem;">
+            Authentication: <code class="bg-white px-1 border rounded text-dark">X-API-Key: ll_live_...</code> &bull; Rate Limit: 120 req/min
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Keys Table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+        <span class="fw-bold" style="font-size: 0.82rem;">Tenant API Keys</span>
+        <button class="btn btn-primary btn-sm py-1" (click)="openCreateKeyModal()" style="font-size: 0.75rem;">
+          <i class="bi bi-plus-lg me-1"></i> Generate New Key
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-sm">
+          <thead class="table-light">
+            <tr>
+              <th>KEY NAME</th>
+              <th>KEY PREFIX</th>
+              <th>SCOPES</th>
+              <th>CREATED</th>
+              <th>LAST USED</th>
+              <th>STATUS</th>
+              <th class="text-end">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let key of apiKeys">
+              <td>
+                <div class="fw-semibold text-dark" style="font-size: 0.8rem;">{{ key.name }}</div>
+              </td>
+              <td>
+                <code class="bg-light px-2 py-0 border rounded text-dark font-monospace" style="font-size: 0.75rem;">
+                  {{ key.key_prefix }}
+                </code>
+              </td>
+              <td>
+                <div class="d-flex gap-1 flex-wrap">
+                  <span *ngFor="let scope of key.scopes" class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.65rem;">
+                    {{ scope }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <small class="text-muted" style="font-size: 0.72rem;">{{ key.created_at | date:'mediumDate' }}</small>
+              </td>
+              <td>
+                <small class="text-muted" style="font-size: 0.72rem;">
+                  {{ key.last_used_at ? (key.last_used_at | date:'short') : 'Never used' }}
+                </small>
+              </td>
+              <td>
+                <span *ngIf="!key.is_revoked" class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">
+                  Active
+                </span>
+                <span *ngIf="key.is_revoked" class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.68rem;">
+                  Revoked
+                </span>
+              </td>
+              <td class="text-end">
+                <button *ngIf="!key.is_revoked" class="btn btn-outline-danger btn-sm py-0 px-2" (click)="revokeKey(key)" style="font-size: 0.72rem;" title="Revoke this API Key">
+                  Revoke
+                </button>
+                <span *ngIf="key.is_revoked" class="text-muted small" style="font-size: 0.7rem;">Revoked</span>
+              </td>
+            </tr>
+            <tr *ngIf="apiKeys.length === 0">
+              <td colspan="7" class="text-center py-4 text-muted small">
+                No API keys generated yet. Click "Generate New Key" to connect external tools or the Chrome extension.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 2: OUTGOING WEBHOOKS                                                  -->
+  <!-- ========================================================================= -->
+  <div *ngIf="activeTab === 'webhooks'">
+    <!-- Webhook Notice -->
+    <div class="alert alert-info border-0 shadow-sm py-2 px-3 mb-3 d-flex align-items-center gap-2" style="font-size: 0.76rem;">
+      <i class="bi bi-shield-check fs-6 text-primary"></i>
+      <div>
+        <strong>HMAC-SHA256 Signed Deliveries:</strong> All outgoing webhooks include header 
+        <code>X-LoomLead-Signature: sha256=&lt;hmac&gt;</code> generated with your subscription secret. Compatible with Zapier, Make, and custom servers.
+      </div>
+    </div>
+
+    <!-- Subscriptions List -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+        <span class="fw-bold" style="font-size: 0.82rem;">Registered Webhook Endpoints</span>
+        <button class="btn btn-success btn-sm py-1" (click)="openAddWebhookModal()" style="font-size: 0.75rem;">
+          <i class="bi bi-plus-lg me-1"></i> Add Webhook Endpoint
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-sm">
+          <thead class="table-light">
+            <tr>
+              <th>ENDPOINT URL</th>
+              <th>DESCRIPTION</th>
+              <th>SUBSCRIBED EVENTS</th>
+              <th>SIGNING SECRET</th>
+              <th>STATUS</th>
+              <th class="text-end">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let sub of subscriptions">
+              <td>
+                <div class="fw-semibold font-monospace text-dark text-truncate" style="font-size: 0.76rem; max-width: 260px;" [title]="sub.url">
+                  {{ sub.url }}
+                </div>
+              </td>
+              <td>
+                <span class="text-muted small" style="font-size: 0.72rem;">{{ sub.description || 'Zapier / Integration' }}</span>
+              </td>
+              <td>
+                <div class="d-flex gap-1 flex-wrap">
+                  <span *ngFor="let event of sub.events" class="badge bg-light text-dark border" style="font-size: 0.65rem;">
+                    {{ event }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-1">
+                  <span class="font-monospace small text-muted" style="font-size: 0.7rem;">
+                    {{ revealedSecrets[sub.id] ? sub.secret : '••••••••••••••••••••' }}
+                  </span>
+                  <button class="btn btn-link btn-sm p-0 text-muted" (click)="toggleSecret(sub.id)" title="Toggle Secret">
+                    <i class="bi" [class.bi-eye]="!revealedSecrets[sub.id]" [class.bi-eye-slash]="revealedSecrets[sub.id]"></i>
+                  </button>
+                  <button *ngIf="revealedSecrets[sub.id]" class="btn btn-link btn-sm p-0 text-primary" (click)="copySecret(sub.secret)" title="Copy Secret">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <div class="form-check form-switch m-0">
+                  <input class="form-check-input" type="checkbox" [checked]="sub.is_active" (change)="toggleWebhookActive(sub)" style="cursor: pointer;">
+                </div>
+              </td>
+              <td class="text-end">
+                <button class="btn btn-outline-danger btn-sm py-0 px-2" (click)="deleteWebhook(sub)" style="font-size: 0.72rem;">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="subscriptions.length === 0">
+              <td colspan="6" class="text-center py-4 text-muted small">
+                No webhook endpoints subscribed yet. Click "Add Webhook Endpoint" to stream leads to Zapier or Make.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 3: DELIVERY LOGS & RETRIES                                            -->
+  <!-- ========================================================================= -->
+  <div *ngIf="activeTab === 'deliveries'">
+    <!-- Filter bar -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body p-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted small fw-semibold" style="font-size: 0.72rem;">Filter Status:</span>
+          <select class="form-select form-select-sm" [(ngModel)]="deliveryStatusFilter" (change)="loadDeliveries()" style="height: 30px; font-size: 0.75rem; width: 140px;">
+            <option value="All">All Statuses</option>
+            <option value="success">✅ Success (2xx)</option>
+            <option value="pending">⏳ Pending Retry</option>
+            <option value="failed">❌ Failed</option>
+          </select>
+          <button class="btn btn-outline-secondary btn-sm" (click)="loadDeliveries()" style="height: 30px; font-size: 0.75rem;" title="Refresh Delivery Logs">
+            <i class="bi bi-arrow-repeat"></i>
+          </button>
+        </div>
+        <div class="text-muted small" style="font-size: 0.72rem;">
+          Automatic retries with exponential backoff up to 5 attempts (2m, 4m, 8m, 16m).
+        </div>
+      </div>
+    </div>
+
+    <!-- Deliveries Table Card -->
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-sm">
+          <thead class="table-light">
+            <tr>
+              <th>EVENT</th>
+              <th>DESTINATION URL</th>
+              <th>HTTP STATUS</th>
+              <th>ATTEMPTS</th>
+              <th>TIMESTAMP</th>
+              <th>PAYLOAD</th>
+              <th class="text-end">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of deliveries">
+              <td>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.68rem;">
+                  {{ item.event }}
+                </span>
+              </td>
+              <td>
+                <div class="font-monospace text-truncate text-secondary" style="font-size: 0.74rem; max-width: 260px;" [title]="item.webhook_url">
+                  {{ item.webhook_url }}
+                </div>
+              </td>
+              <td>
+                <span *ngIf="item.status === 'success'" class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">
+                  {{ item.status_code || 200 }} OK
+                </span>
+                <span *ngIf="item.status === 'pending'" class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 0.68rem;">
+                  Pending Retry ({{ item.status_code || 'Err' }})
+                </span>
+                <span *ngIf="item.status === 'failed'" class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.68rem;">
+                  Failed ({{ item.status_code || 'Err' }})
+                </span>
+              </td>
+              <td>
+                <span class="small font-monospace text-muted" style="font-size: 0.72rem;">
+                  {{ item.attempt }} / {{ item.max_attempts }}
+                </span>
+              </td>
+              <td>
+                <small class="text-muted" style="font-size: 0.72rem;">{{ item.created_at | date:'short' }}</small>
+              </td>
+              <td>
+                <button class="btn btn-outline-secondary btn-sm py-0 px-2" (click)="viewPayload(item)" style="font-size: 0.7rem;">
+                  <i class="bi bi-code-slash me-1"></i> View
+                </button>
+              </td>
+              <td class="text-end">
+                <button class="btn btn-outline-primary btn-sm py-0 px-2" [disabled]="resendingDeliveryId === item.id" (click)="resendDelivery(item)" style="font-size: 0.72rem;" title="Resend Webhook Now">
+                  <span *ngIf="resendingDeliveryId === item.id" class="spinner-border spinner-border-sm me-1"></span>
+                  <i *ngIf="resendingDeliveryId !== item.id" class="bi bi-arrow-repeat me-1"></i> Resend
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="deliveries.length === 0">
+              <td colspan="7" class="text-center py-4 text-muted small">
+                No webhook delivery events logged yet.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 4: CHROME EXTENSION (MANIFEST V3)                                     -->
+  <!-- ========================================================================= -->
+  <div *ngIf="activeTab === 'extension'">
+    <div class="row g-3">
+      <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <img src="assets/logo-icon.png" alt="LoomLead" style="width: 34px; height: 34px; object-fit: contain;">
+              <div>
+                <h6 class="fw-bold mb-0" style="font-size: 1rem;">LoomLead B2B Lead Capturer (Chrome Extension)</h6>
+                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.65rem;">Manifest V3 Compliant</span>
+              </div>
+            </div>
+
+            <p class="text-muted" style="font-size: 0.78rem;">
+              Capture leads with zero data entry straight from <strong>LinkedIn profiles</strong>, <strong>Google Search & Maps</strong>, and <strong>any website</strong>. Automatically normalizes phone numbers, deduplicates existing contacts, and computes lead scores instantly.
+            </p>
+
+            <h6 class="fw-bold mb-2 text-dark" style="font-size: 0.82rem;">Quick 30-Second Installation:</h6>
+            <ol class="small text-muted ps-3 mb-4" style="font-size: 0.76rem; line-height: 1.6;">
+              <li>Open Google Chrome, Brave, or Microsoft Edge.</li>
+              <li>Navigate to <code class="bg-light px-1 border rounded text-dark">chrome://extensions/</code> in your URL bar.</li>
+              <li>Turn on <strong>"Developer mode"</strong> in the top-right corner.</li>
+              <li>Click <strong>"Load unpacked"</strong> and select the <code class="bg-light px-1 border rounded text-dark">chrome-extension</code> folder from your project directory.</li>
+              <li>Click the LoomLead extension icon in your toolbar, paste your API Key below, and click <strong>Save Connection</strong>.</li>
+            </ol>
+
+            <div class="alert alert-warning-subtle border border-warning-subtle py-2 px-3 mb-0" style="font-size: 0.75rem;">
+              <i class="bi bi-shield-lock-fill me-1 text-warning"></i>
+              <strong>Privacy Guaranteed:</strong> Data is extracted strictly on-demand when you click the extension popup. No background tracking or scraping occurs.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <h6 class="fw-bold mb-3" style="font-size: 0.85rem;"><i class="bi bi-sliders me-1 text-primary"></i> Extension Setup Parameters</h6>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">API Base URL</label>
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control form-control-sm font-monospace" [value]="publicApiBaseUrl" readonly style="font-size: 0.75rem;">
+                <button class="btn btn-outline-secondary btn-sm" (click)="copyApiUrl()">
+                  <i class="bi" [class.bi-clipboard]="!copiedApiUrl" [class.bi-check-lg]="copiedApiUrl"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Your Active API Key</label>
+              <div *ngIf="apiKeys.length > 0">
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control form-control-sm font-monospace" [value]="apiKeys[0].key_prefix" readonly style="font-size: 0.75rem;">
+                </div>
+                <small class="text-muted mt-1 d-block" style="font-size: 0.68rem;">Using prefix from key "{{ apiKeys[0].name }}".</small>
+              </div>
+              <div *ngIf="apiKeys.length === 0">
+                <button class="btn btn-primary btn-sm w-100" (click)="openCreateKeyModal()" style="font-size: 0.75rem;">
+                  <i class="bi bi-key-fill me-1"></i> Generate API Key for Extension
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3 bg-light rounded text-center">
+              <i class="bi bi-check-circle-fill text-success fs-3 mb-1 d-block"></i>
+              <div class="fw-bold small" style="font-size: 0.78rem;">Automatic Inbound Deduplication Active</div>
+              <p class="text-muted small mb-0" style="font-size: 0.7rem;">
+                Contacts saved through the Chrome extension are instantly run through your Data Hygiene engine.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: GENERATE API KEY                                                   -->
+<!-- ========================================================================= -->
+<div class="modal fade show d-block" *ngIf="showCreateKeyModal" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered modal-sm" style="max-width: 440px;">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-light">
+        <h6 class="modal-title fw-bold mb-0" style="font-size: 0.9rem;">
+          <i class="bi bi-key-fill text-primary me-1"></i> Generate New Public API Key
+        </h6>
+        <button type="button" class="btn-close py-1" (click)="showCreateKeyModal = false"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Key Name / Label *</label>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="newKeyName" placeholder="e.g. Zapier Production, Chrome Extension, Mobile App">
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Permission Scopes</label>
+          <div class="form-check mb-1">
+            <input class="form-check-input" type="checkbox" id="scopeRead" [(ngModel)]="newKeyScopeRead">
+            <label class="form-check-label small" for="scopeRead" style="font-size: 0.75rem;">
+              <code>leads:read</code> - List and view lead details
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="scopeWrite" [(ngModel)]="newKeyScopeWrite">
+            <label class="form-check-label small" for="scopeWrite" style="font-size: 0.75rem;">
+              <code>leads:write</code> - Create, update, add notes, and move lead stages
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-2 px-3">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="showCreateKeyModal = false">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="submitCreateKey()">Generate Key</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: ONE-TIME RAW KEY REVEAL                                            -->
+<!-- ========================================================================= -->
+<div class="modal fade show d-block" *ngIf="showRawKeyModal" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered modal-md" style="max-width: 520px;">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-light">
+        <h6 class="modal-title fw-bold mb-0 text-success" style="font-size: 0.92rem;">
+          <i class="bi bi-shield-check me-1"></i> API Key Generated Successfully
+        </h6>
+        <button type="button" class="btn-close py-1" (click)="showRawKeyModal = false"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.75rem;">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          <strong>Save this secret key now:</strong> For security reasons, this raw key is hashed in our database and will <strong>never be shown again</strong>.
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Your Secret API Key</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control form-control-sm font-monospace bg-light" [value]="justCreatedKey?.raw_key" readonly style="font-size: 0.78rem;">
+            <button class="btn btn-primary btn-sm px-3" (click)="copyRawKey()">
+              <i class="bi" [class.bi-clipboard]="!keyCopied" [class.bi-check-lg]="keyCopied"></i>
+              {{ keyCopied ? 'Copied!' : 'Copy' }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-2 px-3">
+        <button type="button" class="btn btn-primary btn-sm" (click)="showRawKeyModal = false">I Have Saved My Key</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: ADD WEBHOOK ENDPOINT                                               -->
+<!-- ========================================================================= -->
+<div class="modal fade show d-block" *ngIf="showAddWebhookModal" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered modal-md" style="max-width: 520px;">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-light">
+        <h6 class="modal-title fw-bold mb-0" style="font-size: 0.9rem;">
+          <i class="bi bi-lightning-charge-fill text-success me-1"></i> Add Webhook Subscription
+        </h6>
+        <button type="button" class="btn-close py-1" (click)="showAddWebhookModal = false"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="mb-2">
+          <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Target Webhook URL *</label>
+          <input type="url" class="form-control form-control-sm font-monospace" [(ngModel)]="newWebhookUrl" placeholder="https://hooks.zapier.com/hooks/catch/...">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Description (Optional)</label>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="newWebhookDescription" placeholder="e.g. Sync new leads to Slack, Zapier CRM pipeline">
+        </div>
+
+        <div>
+          <label class="form-label small fw-semibold mb-1" style="font-size: 0.72rem;">Subscribe to Events</label>
+          <div class="border rounded p-2 bg-light">
+            <div *ngFor="let ev of supportedEvents" class="form-check mb-1">
+              <input class="form-check-input" type="checkbox" [id]="'ev_' + ev.key" [(ngModel)]="selectedEvents[ev.key]">
+              <label class="form-check-label small" [for]="'ev_' + ev.key" style="font-size: 0.75rem;">
+                <code>{{ ev.key }}</code> - <span class="text-muted">{{ ev.desc }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-2 px-3">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="showAddWebhookModal = false">Cancel</button>
+        <button type="button" class="btn btn-success btn-sm" (click)="submitAddWebhook()">Register Webhook</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: VIEW PAYLOAD                                                       -->
+<!-- ========================================================================= -->
+<div class="modal fade show d-block" *ngIf="showPayloadModal" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 600px;">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 px-3 bg-light">
+        <div>
+          <h6 class="modal-title fw-bold mb-0" style="font-size: 0.9rem;">
+            Webhook Payload: <code>{{ selectedPayloadForModal?.event }}</code>
+          </h6>
+          <small class="text-muted" style="font-size: 0.7rem;">{{ selectedPayloadForModal?.webhook_url }}</small>
+        </div>
+        <button type="button" class="btn-close py-1" (click)="showPayloadModal = false"></button>
+      </div>
+      <div class="modal-body p-3">
+        <pre class="bg-dark text-light p-3 rounded font-monospace small mb-0" style="max-height: 320px; overflow-y: auto; font-size: 0.72rem;">{{ selectedPayloadForModal?.payload | json }}</pre>
+        <div *ngIf="selectedPayloadForModal?.response_body" class="mt-2">
+          <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">RESPONSE BODY:</small>
+          <pre class="bg-light p-2 rounded small text-dark border mb-0" style="max-height: 100px; overflow-y: auto; font-size: 0.7rem;">{{ selectedPayloadForModal?.response_body }}</pre>
+        </div>
+      </div>
+      <div class="modal-footer py-2 px-3">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="showPayloadModal = false">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
