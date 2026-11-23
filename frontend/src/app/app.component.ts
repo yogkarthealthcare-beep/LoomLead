@@ -20,13 +20,13 @@ interface ChatMessage {
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'LoomLead CRM';
-  isSidebarOpen: boolean = false;
-  isAiChatOpen: boolean = false;
-  aiPromptInput: string = '';
-  globalSearchText: string = '';
+  public title: string = 'LoomLead CRM';
+  public isSidebarOpen: boolean = false;
+  public isAiChatOpen: boolean = false;
+  public aiPromptInput: string = '';
+  public globalSearchText: string = '';
 
-  chatMessages: ChatMessage[] = [
+  public chatMessages: ChatMessage[] = [
     {
       sender: 'agent',
       text: 'Namaste! Main aapka LoomLead AI Assistant hoon. Aap mujhse bol sakte hain: "Hot leads dikhao", "Google Maps scraper open karo", ya "Rahul ko call karne ka task banao".',
@@ -50,25 +50,37 @@ export class AppComponent {
     });
   }
 
-  isLoginPage(): boolean {
+  /**
+   * Checks if current active route is login / register
+   */
+  public isLoginPage(): boolean {
     return this.router.url.includes('/login');
   }
 
-  toggleSidebar(): void {
+  /**
+   * Toggles the mobile drawer sidebar
+   */
+  public toggleSidebar(): void {
     this.isSidebarOpen = !this.isSidebarOpen;
   }
 
-  closeSidebar(): void {
+  /**
+   * Closes the mobile drawer sidebar
+   */
+  public closeSidebar(): void {
     this.isSidebarOpen = false;
   }
 
-  onNavLinkClick(): void {
+  /**
+   * Auto-closes sidebar on mobile when navigating
+   */
+  public onNavLinkClick(): void {
     if (window.innerWidth < 992) {
       this.closeSidebar();
     }
   }
 
-  onGlobalSearch(): void {
+  public onGlobalSearch(): void {
     if (!this.globalSearchText.trim()) return;
     if (this.authService.isDemo()) {
       this.authService.triggerDemoLock('Global Google Maps Search');
@@ -78,11 +90,11 @@ export class AppComponent {
     this.globalSearchText = '';
   }
 
-  toggleAiChat(): void {
+  public toggleAiChat(): void {
     this.isAiChatOpen = !this.isAiChatOpen;
   }
 
-  sendAiPrompt(customText?: string): void {
+  public sendAiPrompt(customText?: string): void {
     const textToSend = customText || this.aiPromptInput;
     if (!textToSend || textToSend.trim() === '') return;
 
@@ -115,7 +127,7 @@ export class AppComponent {
     });
   }
 
-  logout(): void {
+  public logout(): void {
     this.authService.logout();
   }
 }
